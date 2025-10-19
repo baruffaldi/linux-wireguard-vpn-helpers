@@ -1,11 +1,30 @@
 #!/bin/sh
 set -eu
 
+echo "=============================="
+echo " WireGuard Client Configurator"
+echo "=============================="
+echo
+
+ask() {
+  var="$1"; prompt="$2"; def="${3:-}"
+  if [ -n "$def" ]; then printf "%s [%s]: " "$prompt" "$def"; else printf "%s: " "$prompt"; fi
+  printf ">> "
+  read ans || true
+  if [ -n "${ans:-}" ]; then eval "$var=\$ans"; else eval "$var=\$def"; fi
+}
+
+ask INTERFACE "Inserisci l'interfaccia WireGuard" "wg0"
+
 WG_DIR="/etc/wireguard"
-INTERFACE="${1:-wg0}"
-echo "Interfaccia selezionata: $INTERFACE"
-WG_CONF="${WG_DIR}/${INTERFACE}.conf"
+WG_CONF="${INTERFACE}.conf"
+WG_CONF_PATH="${WG_DIR}/${WG_CONF}"
 CLIENTS_DIR="${WG_DIR}/clients"
+
+echo "Interfaccia selezionata: $INTERFACE"
+echo "File di configurazione: $WG_CONF_PATH"
+echo "Directory client:      $CLIENTS_DIR"
+echo
 
 die() { echo "ERRORE: $*" >&2; exit 1; }
 need_root() { [ "$(id -u)" -eq 0 ] || die "Esegui come root."; }
@@ -30,19 +49,11 @@ install_wg() {
   esac
 }
 
-ask() {
-  var="$1"; prompt="$2"; def="${3:-}"
-  if [ -n "$def" ]; then printf "%s [%s]: " "$prompt" "$def"; else printf "%s: " "$prompt"; fi
-  printf ">> "
-  read ans || true
-  if [ -n "${ans:-}" ]; then eval "$var=\$ans"; else eval "$var=\$def"; fi
-}
-
 conf_get() {
   key="$1"
-  if [ -f "$WG_CONF" ]; then
+  if [ -f "$WG_CONF_PATH" ]; then
     # usa grep + cut, più portabile
-    grep -E "^[[:space:]]*${key}[[:space:]]*=" "$WG_CONF" 2>/dev/null \
+    grep -E "^[[:space:]]*${key}[[:space:]]*=" "$WG_CONF_PATH" 2>/dev/null \
       | head -n1 \
       | sed -E "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*//" \
       | tr -d '\r' \
@@ -52,8 +63,8 @@ conf_get() {
 
 conf_comment_get() {
   key="$1"
-  if [ -f "$WG_CONF" ]; then
-    grep -E "^# *${key}:" "$WG_CONF" 2>/dev/null \
+  if [ -f "$WG_CONF_PATH" ]; then
+    grep -E "^# *${key}:" "$WG_CONF_PATH" 2>/dev/null \
       | head -n1 \
       | sed -E "s/^# *${key}:[[:space:]]*//" \
       | tr -d '\r' \
@@ -98,7 +109,7 @@ list_clients() {
 server_remove_peer_block() {
   # remove [Peer] block that has comment "# clientN_NAME"
   label="$1"
-  tmp="${WG_CONF}.tmp.$$"
+  tmp="${WG_CONF_PATH}.tmp.$$"
   awk -v L="$label" '
     BEGIN{skip=0}
     /^\[Peer\]/ {    # start peer block
@@ -126,14 +137,14 @@ server_remove_peer_block() {
       }
     }
     { print }
-  ' "$WG_CONF" > "$tmp" && mv "$tmp" "$WG_CONF"
+  ' "$WG_CONF_PATH" > "$tmp" && mv "$tmp" "$WG_CONF_PATH"
 }
 
 server_append_peer() {
   # args: label(public comment), pubkey, ip
   label="$1"; pubkey="$2"; ip="$3"
   umask 077
-  cat >> "$WG_CONF" <<EOF
+  cat >> "$WG_CONF_PATH" <<EOF
 [Peer]
 # $label
 PublicKey = $pubkey
@@ -166,7 +177,7 @@ EOF
 
 [Peer]
 PublicKey = ${server_pub}
-Endpoint = ${endpoint}
+Endpoint = ${endpoint}:${port}
 AllowedIPs = ${office}
 PersistentKeepalive = 25
 EOF
@@ -188,16 +199,17 @@ rename_client_files() {
 need_root
 have_cmd wg || install_wg
 ensure_dirs
-[ -f "$WG_CONF" ] || die "File server non trovato: $WG_CONF"
+[ -f "$WG_CONF_PATH" ] || die "File server non trovato: $WG_CONF_PATH"
 
 while true; do
     SERVER_SUBNET="$(conf_comment_get "Subnet")"
-    SERVER_PUBKEY="$(awk '/^# PublicKey:/{print $3; exit}' "$WG_CONF" 2>/dev/null || true)"
+    SERVER_SUBNET_VPN="$(conf_comment_get "Subnet VPN")"
+    SERVER_PUBKEY="$(conf_comment_get "PublicKey")"
     SERVER_PORT="$(conf_get ListenPort)"
-    SERVER_ENDPOINT="$(awk '/^# Endpoint:/{print $3; exit}' "$WG_CONF" 2>/dev/null || true)"
-    SERVER_DNS="$(conf_get DNS || true)"
+    SERVER_ENDPOINT="$(conf_comment_get "Endpoint Host")"
+    SERVER_DNS="$(conf_comment_get "DNS")"
     MAX_CLIENTS="$(conf_comment_get "Max Clients" || echo 254)"
-    BASE3="$(first_three "$SERVER_SUBNET")"
+    BASE3="$(first_three "$SERVER_SUBNET_VPN")"
 
     CLIENTS=$(ls "$CLIENTS_DIR"/*_config.conf 2>/dev/null | wc -l || echo 0)
     FREE=$((MAX_CLIENTS - CLIENTS))
@@ -234,18 +246,16 @@ while true; do
         NUM=$(next_free_client_number "$MAX_CLIENTS")
         IP="${BASE3}.$((1+NUM))"
 
-        ask OFFICE "Subnet ufficio (es. 192.168.1.0/24 o multiple, virgola)" ""
+        ask OFFICE "Subnet ufficio (es. 192.168.1.0/24 o multiple, virgola)" "$SERVER_SUBNET"
 
-        # Recupera la Subnet dal file server wg0.conf
-        SERVER_OFFICE_SUBNET="$(awk -F': ' '/^# *Subnet:/{print $2}' "$WG_CONF" 2>/dev/null | head -n1 || true)"
-        if [ -n "$SERVER_OFFICE_SUBNET" ]; then
-            OFFICE="$OFFICE,$SERVER_OFFICE_SUBNET"
-            echo "→ Subnet da autorizzare: $OFFICE"
+        # Recupera la Subnet dal file server ${WG_CONF_PATH}
+        if [ -n "$SERVER_SUBNET_VPN" ]; then
+            OFFICE="$SERVER_SUBNET_VPN,$OFFICE"
+            echo "→ Subnet finale autorizzata: $OFFICE"
         fi
 
-        # Recupera il DNS dal file server wg0.conf
-        OLD_SERVER_DNS="$(awk -F': ' '/^# *DNS:/{print $2}' "$WG_CONF" 2>/dev/null | head -n1 || true)"
-        ask SERVER_DNS "DNS (es. 1.1.1.1 o vuoto per nessuno)" "$OLD_SERVER_DNS"
+        # Recupera il DNS dal file server ${WG_CONF_PATH}
+        ask SERVER_DNS "DNS (es. 1.1.1.1 o vuoto per nessuno)" "$SERVER_DNS"
 
         generate_client_keys "$NUM" "$NAME"
         make_client_config "$NUM" "$NAME" "$IP" "$SERVER_PUBKEY" "$SERVER_ENDPOINT" "$SERVER_PORT" "$SERVER_DNS" "$OFFICE"
@@ -294,21 +304,19 @@ while true; do
         [ -n "$NEW_NAME" ] || NEW_NAME="$NAME"
 
         # --- chiedi nuovo IP ---
-        DEF_NEW_IP="$(calc_client_ip "$SERVER_SUBNET" "$N")"
+        DEF_NEW_IP="$(calc_client_ip "$SERVER_SUBNET_VPN" "$N")"
         ask NEW_IP "Nuovo IP (formato x.y.z.w nella VPN)" "$CUR_IP"
         [ -n "$NEW_IP" ] || NEW_IP="$CUR_IP"
 
         # --- chiedi nuove subnet ufficio ---
-        SERVER_OFFICE_SUBNET="$(awk -F': ' '/^# *Subnet:/{print $2}' "$WG_CONF" 2>/dev/null | head -n1 || true)"
-        echo "Subnet ufficio attuale: ${CUR_ALLOWED:-<nessuno>}"
-        echo "Subnet ufficio prevista: ${SERVER_OFFICE_SUBNET:-<nessuno>}"
+        echo "  Subnet VPN: ${SERVER_SUBNET_VPN:-<nessuno>}"
+        echo "  Subnet ufficio: ${SERVER_SUBNET:-<nessuno>}"
         ask NEW_OFFICE "Subnet ufficio (es. 192.168.1.0/24 o multiple, virgola)" "$CUR_ALLOWED"
         [ -n "$NEW_OFFICE" ] || NEW_OFFICE="$CUR_ALLOWED"
 
         # --- chiedi nuovo DNS ---
-        SERVER_DNS="$(awk -F': ' '/^# *DNS:/{print $2}' "$WG_CONF" 2>/dev/null | head -n1 || true)"
-        echo "DNS attuale: ${CUR_DNS:-<nessuno>}"
-        echo "DNS previsto: ${SERVER_DNS:-<nessuno>}"
+        echo "  DNS attuale: ${CUR_DNS:-<nessuno>}"
+        echo "  DNS previsto: ${SERVER_DNS:-<nessuno>}"
         ask NEW_DNS "DNS (es. 1.1.1.1 o vuoto per nessuno)" "$CUR_DNS"
         [ -n "$NEW_DNS" ] || NEW_DNS="$CUR_DNS"
 
@@ -330,7 +338,7 @@ while true; do
         fi
 
         # --- Aggiorna file server (rimuovi blocco vecchio e aggiungi nuovo) ---
-        echo "→ Aggiornamento wg0.conf..."
+        echo "→ Aggiornamento ${WG_CONF}..."
         server_remove_peer_block "client${N}_${NAME}"
         server_append_peer "client${N}_${NEW_NAME}" "$NEW_PUBKEY" "$NEW_IP"
 
@@ -375,8 +383,8 @@ while true; do
             echo "→ Rimozione file del client..."
             rm -f "${CLIENTS_DIR}/client${N}_${NAME}"_* 2>/dev/null || true
 
-            echo "→ Rimozione blocco dal file wg0.conf..."
-            sed -i "/# client${N}_${NAME}/,/^$/d" "$WG_CONF" 2>/dev/null || true
+            echo "→ Rimozione blocco dal file ${WG_CONF}..."
+            sed -i "/# client${N}_${NAME}/,/^$/d" "$WG_CONF_PATH" 2>/dev/null || true
 
             echo "Client client${N}_${NAME} rimosso correttamente."
         else

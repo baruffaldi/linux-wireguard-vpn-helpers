@@ -1,41 +1,10 @@
 #!/bin/sh
 set -eu
 
-WG_DIR="/etc/wireguard"
-INTERFACE="${1:-wg0}"
-WG_CONF="${WG_DIR}/${INTERFACE}.conf"
-PRIVATE_KEY="${WG_DIR}/server_private.key"
-PUBLIC_KEY="${WG_DIR}/server_public.key"
-
 echo "=============================="
 echo " WireGuard Server Configurator"
 echo "=============================="
 echo
-echo "Interfaccia selezionata: $INTERFACE"
-
-if [ ! -e "/etc/init.d/wg-quick.${INTERFACE}" ]; then
-    ln -s /etc/init.d/wg-quick "/etc/init.d/wg-quick.${INTERFACE}"
-    echo "Creato link simbolico: /etc/init.d/wg-quick.${INTERFACE}"
-fi
-
-echo
-
-[ -d "$WG_DIR" ] || mkdir -p "$WG_DIR"
-
-# --- funzione per leggere un valore esistente da wg0.conf ---
-get_conf_value() {
-  key="$1"
-  if [ -f "$WG_CONF" ]; then
-    awk -v k="$key" '
-      $0 ~ "^[[:space:]]*" k "[[:space:]]*=" {
-        val=$0
-        sub("^[[:space:]]*"k"[[:space:]]*=[[:space:]]*","",val)
-        gsub(/[[:space:]]+$/, "", val)
-        print val
-        exit
-      }' "$WG_CONF"
-  fi
-}
 
 # --- helper per prompt interattivo ---
 ask() {
@@ -53,6 +22,52 @@ ask() {
     eval "$varname=\"\$input\""
   else
     eval "$varname=\"\$default\""
+  fi
+}
+
+ask INTERFACE "Inserisci l'interfaccia WireGuard" "wg0"
+
+WG_DIR="/etc/wireguard"
+WG_CONF="${INTERFACE}.conf"
+WG_CONF_PATH="${WG_DIR}/${WG_CONF}"
+PRIVATE_KEY="${WG_DIR}/server_private.key"
+PUBLIC_KEY="${WG_DIR}/server_public.key"
+
+echo "Interfaccia WireGuard selezionata: $INTERFACE"
+
+if [ ! -e "/etc/init.d/wg-quick.${INTERFACE}" ]; then
+    ln -s /etc/init.d/wg-quick "/etc/init.d/wg-quick.${INTERFACE}"
+    echo
+    echo "Creato link simbolico: /etc/init.d/wg-quick.${INTERFACE}"
+fi
+
+echo
+
+[ -d "$WG_DIR" ] || mkdir -p "$WG_DIR"
+
+# --- funzione per leggere un valore esistente da wg0.conf ---
+get_conf_value() {
+  key="$1"
+  if [ -f "$WG_CONF_PATH" ]; then
+    awk -v k="$key" '
+      $0 ~ "^[[:space:]]*" k "[[:space:]]*=" {
+        val=$0
+        sub("^[[:space:]]*"k"[[:space:]]*=[[:space:]]*","",val)
+        gsub(/[[:space:]]+$/, "", val)
+        print val
+        exit
+      }' "$WG_CONF_PATH"
+  fi
+}
+
+conf_comment_get() {
+  key="$1"
+  if [ -f "$WG_CONF_PATH" ]; then
+    grep -E "^# *${key}:" "$WG_CONF_PATH" 2>/dev/null \
+      | head -n1 \
+      | sed -E "s/^# *${key}:[[:space:]]*//" \
+      | tr -d '\r' \
+      | sed 's/[[:space:]]*$//'
   fi
 }
 
@@ -97,8 +112,57 @@ EOF
 # --- lettura vecchi valori se presenti ---
 OLD_ADDR="$(get_conf_value Address | awk -F'/' '{print $1}')"
 OLD_PORT="$(get_conf_value ListenPort)"
-OLD_ENDPOINT="$(awk '/^# *Endpoint:/{sub(/^# *Endpoint:[[:space:]]*/, "", $0); sub(/:.*/, "", $0); print; exit}' "$WG_CONF" 2>/dev/null || true)"
-OLD_DNS="$(awk '/^# *DNS:/{sub(/^# *DNS:[[:space:]]*/, "", $0); sub(/:.*/, "", $0); print; exit}' "$WG_CONF" 2>/dev/null || true)"
+OLD_ENDPOINT="$(conf_comment_get "Endpoint Host")"
+OLD_DNS="$(conf_comment_get "DNS")"
+
+# --- trovo la subnet da condividere in VPN ---
+echo "Interfacce di rete disponibili:"
+IFACES=$(ip -o link show 2>/dev/null | awk -F': ' '{print $2}' | grep -v lo || ifconfig -a | grep '^[^ ]' | awk '{print $1}' | grep -v lo)
+
+n=1
+for i in $IFACES; do
+  echo "  $n) $i"
+  n=$((n+1))
+done
+
+# --- Step 2: chiedi all'utente quale interfaccia usare ---
+echo
+printf "Seleziona un'interfaccia da condividere in VPN [1-%d]: " $((n-1))
+read sel
+
+sel_if=$(echo "$IFACES" | sed -n "${sel}p" || true)
+
+if [ -z "$sel_if" ]; then
+  echo "Selezione non valida." >&2
+  exit 1
+fi
+
+echo "Interfaccia selezionata: $sel_if"
+echo
+
+# --- Step 3: rileva la subnet dell'interfaccia ---
+# Tenta con ip, poi fallback su ifconfig
+OFFICE_SUBNET=""
+
+if command -v ip >/dev/null 2>&1; then
+  # Esempio output: inet 192.168.1.10/24 brd ...
+  CIDR=$(ip -o -4 addr show "$sel_if" | awk '{print $4}' | head -n1)
+  if [ -n "$CIDR" ]; then
+    BASE=$(echo "$CIDR" | cut -d'/' -f1 | awk -F. '{printf "%d.%d.%d.0", $1,$2,$3}')
+    MASK=$(echo "$CIDR" | cut -d'/' -f2)
+    OFFICE_SUBNET="${BASE}/${MASK}"
+  fi
+elif command -v ifconfig >/dev/null 2>&1; then
+  IP=$(ifconfig "$sel_if" | awk '/inet /{print $2;exit}')
+  MASK=$(ifconfig "$sel_if" | awk '/netmask/{print $4;exit}')
+  if [ -n "$IP" ] && [ -n "$MASK" ]; then
+    # Convert netmask to CIDR bits
+    MASKBITS=$(printf "%d.%d.%d.%d" $(echo "$MASK" | tr '.' ' ') |
+      awk -F. '{for(i=1;i<=4;i++){n=0;v=$i;while(v){n+=v%2;v=int(v/2)};c+=n}print c}')
+    BASE=$(echo "$IP" | awk -F. '{printf "%d.%d.%d.0",$1,$2,$3}')
+    OFFICE_SUBNET="${BASE}/${MASKBITS}"
+  fi
+fi
 
 
 # --- prompt ---
@@ -107,6 +171,7 @@ ask NUM_CLIENTS "Quanti client si collegheranno a questo server?" "1"
 ask PORT "Inserisci la porta UDP WireGuard" "${OLD_PORT:-51234}"
 ask ENDPOINT "Inserisci l'endpoint pubblico (hostname o IP pubblico)" "$OLD_ENDPOINT"
 ask DNS "Vuoi impostare un DNS per i client (es. 1.1.1.1 o vuoto per nessuno)" "$OLD_DNS"
+ask SUBNET "Subnet ufficio da condividere in VPN" "$OFFICE_SUBNET"
 
 NETMASK="$(calc_netmask "$NUM_CLIENTS")"
 
@@ -118,8 +183,8 @@ EOF
 # Calcola la base subnet corretta allineata al blocco CIDR
 block_size=$(( 2 ** (32 - NETMASK) ))
 last_octet_base=$(( (d / block_size) * block_size ))
-BASE_SUBNET="${a}.${b}.${c}.${last_octet_base}"
-SUBNET="${BASE_SUBNET}/${NETMASK}"
+BASE_SUBNET_VPN="${a}.${b}.${c}.${last_octet_base}"
+SUBNET_VPN="${BASE_SUBNET_VPN}/${NETMASK}"
 ADDRESS="${SERVER_IP}/${NETMASK}"
 
 RANGE_INFO="$(calc_range "$SERVER_IP" "$NETMASK")"
@@ -128,7 +193,8 @@ VPN_RANGE_CLIENTS="$(echo "$RANGE_INFO" | cut -d'|' -f2)"
 
 echo
 echo "→ Verrà usato Address = ${ADDRESS}"
-echo "→ La subnet VPN sarà  = ${SUBNET}"
+echo "→ La subnet VPN sarà  = ${SUBNET_VPN}"
+echo "→ Subnet ufficio      = ${SUBNET}"
 echo "→ Range IP VPN        = ${VPN_RANGE_NET}"
 echo "→ Range client        = ${VPN_RANGE_CLIENTS}"
 echo
@@ -161,20 +227,20 @@ fi
 echo
 echo "Scrittura configurazione in $WG_CONF ..."
 
-if [ -f "$WG_CONF" ]; then
-  cp "$WG_CONF" "${WG_CONF}.bak.$(date +%Y%m%d-%H%M%S)"
-  echo "→ Backup eseguito in ${WG_CONF}.bak.$(date +%Y%m%d-%H%M%S)"
+if [ -f "$WG_CONF_PATH" ]; then
+  cp "$WG_CONF_PATH" "${WG_CONF_PATH}.bak.$(date +%Y%m%d-%H%M%S)"
+  echo "→ Backup eseguito in ${WG_CONF_PATH}.bak.$(date +%Y%m%d-%H%M%S)"
 fi
 
 # Se esiste già una configurazione, estrai i blocchi [Peer]
 PEERS_TMP=""
-if [ -f "$WG_CONF" ]; then
+if [ -f "$WG_CONF_PATH" ]; then
   echo "→ Rilevata configurazione esistente, salvo i blocchi [Peer]..."
-  PEERS_TMP="$(awk '/^\[Peer\]/{flag=1} flag{print}' "$WG_CONF" || true)"
+  PEERS_TMP="$(awk '/^\[Peer\]/{flag=1} flag{print}' "$WG_CONF_PATH" || true)"
 fi
 
 umask 077
-cat > "$WG_CONF" <<EOF
+cat > "$WG_CONF_PATH" <<EOF
 # ======================== WireGuard Server Configuration ========================
 
 [Interface]
@@ -184,33 +250,36 @@ PrivateKey = $(cat "$PRIVATE_KEY")
 
 # --- Routing & Firewall Rules ---
 PostUp = sysctl -w net.ipv4.ip_forward=1
-PostUp = iptables -t nat -A POSTROUTING -s ${SUBNET} -j MASQUERADE
+PostUp = iptables -t nat -A POSTROUTING -s ${SUBNET_VPN} -j MASQUERADE
 PostUp = iptables -A FORWARD -i wg0 -j ACCEPT
 PostUp = iptables -A FORWARD -o wg0 -j ACCEPT
 
 PostDown = sysctl -w net.ipv4.ip_forward=0
-PostDown = iptables -t nat -D POSTROUTING -s ${SUBNET} -j MASQUERADE
+PostDown = iptables -t nat -D POSTROUTING -s ${SUBNET_VPN} -j MASQUERADE
 PostDown = iptables -A FORWARD -i wg0 -j ACCEPT
 PostDown = iptables -A FORWARD -o wg0 -j ACCEPT
 
 # --- Endpoint Info ---
 # Endpoint: ${ENDPOINT}:${PORT}
+# Endpoint Host: ${ENDPOINT}
+# Endpoint Port: ${PORT}
 # PublicKey: $(cat "$PUBLIC_KEY")
 # Subnet: ${SUBNET}
+# Subnet VPN: ${SUBNET_VPN}
 # Max Clients: ${NUM_CLIENTS}
 EOF
 if [ -n "$DNS" ]; then
-  echo "# DNS: $DNS" >> "$WG_CONF"
+  echo "# DNS: $DNS" >> "$WG_CONF_PATH"
 fi
 
 
 # Se erano presenti peer, li riaggiungo in fondo
 if [ -n "$PEERS_TMP" ]; then
-  echo >> "$WG_CONF"
-  echo "$PEERS_TMP" >> "$WG_CONF"
+  echo >> "$WG_CONF_PATH"
+  echo "$PEERS_TMP" >> "$WG_CONF_PATH"
 fi
 
-chmod 600 "$WG_CONF"
+chmod 600 "$WG_CONF_PATH"
 
 echo "→ Configurazione aggiornata con $(echo "$PEERS_TMP" | grep -c '^\[Peer\]' || echo 0) peer mantenuti."
 
@@ -219,13 +288,14 @@ echo
 echo "Configurazione completata!"
 echo
 echo "File generati:"
-echo " - $WG_CONF"
+echo " - $WG_CONF_PATH"
 echo " - $PRIVATE_KEY"
 echo " - $PUBLIC_KEY"
 echo
 echo "Dettagli principali:"
 echo " Address     : $ADDRESS"
 echo " Subnet      : $SUBNET"
+echo " Subnet VPN  : $SUBNET_VPN"
 echo " Range VPN   : $VPN_RANGE_NET"
 echo " Range client: $VPN_RANGE_CLIENTS"
 echo " Porta       : $PORT"
