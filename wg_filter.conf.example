@@ -1,0 +1,16 @@
+# ======================== WireGuard Filter Config =========================
+
+WGPORT="51234"                           # Porta UDP WireGuard
+                                         #
+WAN_IF="eth0"                            # Interfaccia verso Internet
+                                         # della VM
+                                         #
+HOSTS="ddns.example.com"                 # Uno o più hostname DDNS separati
+                                         # da spazi
+                                         #
+EXTRA_URL="https://example.com/acl.txt"  # Lista IP/CIDR extra (file di
+                                         # testo con un IP/netmask per riga)
+                                         #
+IPTABLES="/usr/sbin/iptables"            # Percorso di iptables
+                                         #
+CHAIN="WG_FILTER"                        # Catena dedicata per la porta WG

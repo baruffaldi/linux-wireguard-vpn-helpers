@@ -1,0 +1,5 @@
+.gitupdate.sh
+.gitfetch.sh
+wg_filter.conf
+reports
+reports/*
