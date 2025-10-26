@@ -49,4 +49,19 @@ info "Configuring services to start on boot..."
 rc-update add iptables default
 rc-update add networking default
 
+if [ ! -f "/etc/logrotate.d/messages.conf" ]; then
+    info "Setting up log rotation for /var/log/messages..."
+    cat <<EOF >/etc/logrotate.d/messages.conf
+/var/log/messages {
+    weekly
+    rotate 4
+    compress
+    delaycompress
+    missingok
+    notifempty
+    maxsize 10M
+}
+EOF
+fi
+
 success "System preparation complete!"
