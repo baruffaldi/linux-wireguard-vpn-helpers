@@ -103,12 +103,11 @@ elif command -v ifconfig >/dev/null 2>&1; then
   fi
 fi
 
-
 # --- Prompt ---
 ask SERVER_IP "Enter the VPN server IP" "${OLD_ADDR:-100.64.1.1}"
 ask NUM_CLIENTS "How many clients will connect to this server?" "1"
 ask PORT "Enter the WireGuard UDP port" "${OLD_PORT:-51234}"
-ask ENDPOINT "Enter the public endpoint (hostname or public IP)" "$OLD_ENDPOINT"
+ask ENDPOINT "Enter the public endpoint (hostname or public IP)" "${OLD_ENDPOINT:-$(public_ip_lookup)}"
 ask DNS "Set a DNS for clients (e.g., 1.1.1.1 or empty for none)" "$OLD_DNS"
 ask SUBNET "Office subnet to share in VPN" "$OFFICE_SUBNET"
 

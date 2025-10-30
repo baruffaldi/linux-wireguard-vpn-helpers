@@ -258,3 +258,83 @@ EOF
 
   echo "$net_str - $bcast_str|$start_str - $end_str"
 }
+
+show_network_info_details() {
+  run_if_exists() {
+    if command -v "$1" >/dev/null 2>&1; then
+      shift
+      "$@"
+    else
+      return 1
+    fi
+  }
+
+  info "Interfaces:"
+
+  if command -v ip >/dev/null 2>&1; then
+    ip -br addr show 2>/dev/null || ip addr show 2>/dev/null || true
+  elif command -v ifconfig >/dev/null 2>&1; then
+    ifconfig -a 2>/dev/null || true
+  elif command -v busybox >/dev/null 2>&1 && busybox ip >/dev/null 2>&1; then
+    busybox ip addr show 2>/dev/null || true
+  elif command -v busybox >/dev/null 2>&1 && busybox ifconfig >/dev/null 2>&1; then
+    busybox ifconfig -a 2>/dev/null || true
+  elif [ -d /sys/class/net ]; then
+    echo ""
+    for i in /sys/class/net/*; do
+      iface=$(basename "$i")
+      state=$(cat "$i/operstate" 2>/dev/null || echo "unknown")
+      mac=$(cat "$i/address" 2>/dev/null || echo "no-mac")
+      echo "  $iface ($state) - $mac"
+    done
+  else
+    echo "  Nessuna interfaccia trovata (nessun comando o /sys/class/net)"
+  fi
+
+  info ""
+  info "Routes:"
+  if command -v ip >/dev/null 2>&1; then
+    ip route show 2>/dev/null || true
+  elif command -v route >/dev/null 2>&1; then
+    route -n 2>/dev/null || true
+  elif command -v busybox >/dev/null 2>&1 && busybox route >/dev/null 2>&1; then
+    busybox route -n 2>/dev/null || true
+  else
+    echo "  Nessuna route trovata (ip/route mancanti)"
+  fi
+
+  info ""
+  info "DNS resolvers:"
+  if [ -f /etc/resolv.conf ]; then
+    grep -E '^nameserver' /etc/resolv.conf 2>/dev/null || echo "  Nessun DNS configurato"
+  else
+    echo "  File /etc/resolv.conf mancante"
+  fi
+}
+
+get_free_port() {
+    local port
+    while true; do
+        port=$((RANDOM % 40000 + 20000))
+        # controlla se la porta è libera (usa netcat o ss o lsof o fallback su /proc)
+        if command -v nc >/dev/null 2>&1; then
+            nc -z 127.0.0.1 "$port" >/dev/null 2>&1 || break
+        elif command -v ss >/dev/null 2>&1; then
+            ss -ltn "( sport = :$port )" 2>/dev/null | grep -q "$port" || break
+        elif command -v lsof >/dev/null 2>&1; then
+            lsof -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1 || break
+        elif [ -d /proc/net ]; then
+            grep -q ":$(printf '%04X' "$port")" /proc/net/tcp* 2>/dev/null || break
+        elif command -v netstat >/dev/null 2>&1; then
+            netstat -ltn | awk '{print $4}' | grep -q ":$port$" || break
+        else
+            break  # nessun metodo disponibile, prendila comunque
+        fi
+    done
+    echo "$port"
+}
+
+public_ip_lookup() {
+  PUBLIC_IP=$(curl -fsSL https://ifconfig.me 2>/dev/null || wget -qO- https://ifconfig.me 2>/dev/null || echo "unknown")
+  echo "$PUBLIC_IP"
+}

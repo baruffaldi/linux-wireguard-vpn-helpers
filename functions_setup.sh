@@ -4,7 +4,7 @@
 #
 # This script provides a set of common functions.
 
-step0_update_system() {
+update_system() {
   header "[0] Update packages & repository"
 
   update_ok=0
@@ -38,7 +38,7 @@ step0_update_system() {
   fi
 }
 
-step1_change_root_password() {
+change_root_password() {
   header "[1] Change root password"
   ask confirm "Change root password now? (yes/no)" "no"
   [ "$confirm" != "yes" ] && return
@@ -48,21 +48,13 @@ step1_change_root_password() {
   printf "root:%s\n" "$p1" | chpasswd && success "Password updated."
 }
 
-step2_show_network_info() {
+show_network_info() {
   header "[2] Network interfaces and routes"
-  if have_cmd ip; then
-    info "Interfaces:"
-    ip -br -4 addr show || true
-    info ""
-    info "Routes:"
-    ip route show || true
-  else
-    ifconfig || true
-    route -n || true
-  fi
+  
+  show_network_info_details
 }
 
-step3_setup_networking() {
+setup_networking() {
   header "[3] Run network setup"
 
   # --- Helper per controllare comandi ---
@@ -71,7 +63,7 @@ step3_setup_networking() {
   # --- Alpine Linux ---
   if have_cmd setup-interfaces; then
     info "Detected Alpine Linux (setup-interfaces present)."
-    setup-interfaces && success "setup-interfaces completed." && return 0
+    setup-interfaces && rc-service networking restart && success "setup-interfaces completed." && return 0
   fi
 
   # --- Debian/Ubuntu (ifupdown) ---
@@ -118,7 +110,7 @@ step3_setup_networking() {
   warning "Unable to detect a known network manager. Please reconfigure manually."
 }
 
-step4_ddclient_configure() {
+ddclient_configure() {
   header "[4] Configure Dynamic DNS (ddclient)"
 
   # --- Detect package manager (global fallback if PKG unset) ---
@@ -155,7 +147,7 @@ step4_ddclient_configure() {
     ask DYNUSER "DynDNS username" "none"
     ask_secret DYNPASS "DynDNS password"
 
-    cat >> /etc/ddclient/dclient.conf <<EOF
+    cat >> /etc/ddclient/ddclient.conf <<EOF
 protocol=dyndns2
 server=$DYNSERVER
 login=$DYNUSER
@@ -199,7 +191,7 @@ EOF
   success "Dynamic DNS setup complete."
 }
 
-step5_install_vpn_prereq() {
+install_vpn_prereq() {
   header "[5] Run VPN installer"
   INSTALLER=""
   [ -x "$WG_HELPERS_DIR/sys_prepare_${OS_ID}.sh" ] && INSTALLER="$WG_HELPERS_DIR/sys_prepare_${OS_ID}.sh"
@@ -213,7 +205,7 @@ step5_install_vpn_prereq() {
   fi
 }
 
-step6_server_configure() {
+server_configure() {
   header "[6] Configure VPN server"
   if [ -x "$WG_HELPERS_DIR/wg_server_configure.sh" ]; then
     sh "$WG_HELPERS_DIR/wg_server_configure.sh"
@@ -222,7 +214,7 @@ step6_server_configure() {
   fi
 }
 
-step7_client_configure() {
+client_configure() {
   header "[7] Configure VPN client"
   if [ -x "$WG_HELPERS_DIR/wg_client_configure.sh" ]; then
     sh "$WG_HELPERS_DIR/wg_client_configure.sh"
@@ -231,7 +223,7 @@ step7_client_configure() {
   fi
 }
 
-step8_filter_configure() {
+filter_configure() {
   header "[8] Configure VPN filter"
   if [ -x "$WG_HELPERS_DIR/wg_filter_configure.sh" ]; then
     sh "$WG_HELPERS_DIR/wg_filter_configure.sh"
@@ -240,7 +232,7 @@ step8_filter_configure() {
   fi
 }
 
-step9_generate_report() {
+generate_report() {
   header "[9] Generate report"
   echo "Step,Status,Details,Timestamp" > "$REPORT_PATH"
 

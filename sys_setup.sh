@@ -5,6 +5,12 @@
 
 set -eu
 
+if [ -n "${1:-}" ]; then
+  AUTO_CHOICE="$1"
+else
+  AUTO_CHOICE=""
+fi
+
 resolve_realpath() {
   f="$1"
   while [ -L "$f" ]; do f="$(readlink "$f")"; done
@@ -75,35 +81,50 @@ fi
 # ------------------------------------------------------------------------------
 
 while true; do
-  info ""
-  info "===================== MENU ====================="
-  info " [0] Update system and helpers"
-  info " [1] Change root password"
-  info " [2] Show network interfaces and routes"
-  info " [3] Run setup-networking"
-  info " [4] Configure Dynamic DNS (ddclient)"
-  info " [5] Install VPN prerequisites"
-  info " [6] Configure VPN server"
-  info " [7] Configure VPN client"
-  info " [8] Configure VPN filter"
-  info " [9] Generate and show setup report"
-  info " [Q] Quit"
-  info "==============================================="
-  ask choice "Select an option" ""
+  if [ ! -n "$AUTO_CHOICE" ]; then
+    info ""
+    info "===================== MENU ====================="
+    info " [0] Update system and helpers"
+    info " [1] Change root password"
+    info " [2] Show network interfaces and routes"
+    info " [3] Run setup-networking"
+    info " [4] Configure Dynamic DNS (ddclient)"
+    info " [5] Install VPN prerequisites"
+    info " [6] Configure VPN server"
+    info " [7] Configure VPN client"
+    info " [8] Configure VPN filter"
+    info " [9] Generate and show setup report"
+    info " [10] Reboot system"
+    info " [11] Halt system"
+    info " [Q] Quit"
+    info "==============================================="
+  fi
+
+  if [ -n "$AUTO_CHOICE" ]; then
+    choice="$AUTO_CHOICE"
+  else
+    ask choice "Select an option" ""
+  fi
   case "$choice" in
-    0) step0_update_system ;;
-    1) step1_change_root_password ;;
-    2) step2_show_network_info ;;
-    3) step3_setup_networking ;;
-    4) step4_ddclient_configure ;;
-    5) step5_install_vpn_prereq ;;
-    6) step6_server_configure ;;
-    7) step7_client_configure ;;
-    8) step8_filter_configure ;;
-    9) step9_generate_report ;;
+    0) update_system ;;
+    1) change_root_password ;;
+    2) show_network_info ;;
+    3) setup_networking ;;
+    4) ddclient_configure ;;
+    5) install_vpn_prereq ;;
+    6) server_configure ;;
+    7) client_configure ;;
+    8) filter_configure ;;
+    9) generate_report ;;
+    10) reboot ;;
+    11) halt ;;
     q|Q) success "Exiting."; break ;;
     *) warning "Invalid choice." ;;
   esac
+
+  if [ -n "$AUTO_CHOICE" ]; then
+    break
+  fi
 done
 
 exit 0

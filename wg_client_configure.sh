@@ -1,6 +1,12 @@
 #!/bin/sh
 set -eu
 
+if [ -n "${1:-}" ]; then
+  AUTO_CHOICE="$1"
+else
+  AUTO_CHOICE=""
+fi
+
 resolve_realpath() {
   f="$1"
   while [ -L "$f" ]; do f="$(readlink "$f")"; done
@@ -87,25 +93,38 @@ while true; do
       info "$line"
     done || warning " (none)"
 
-  info ""
-  info "===================== MENU ====================="
-  info " [1] Add client"
-  info " [2] Modify client"
-  info " [3] Delete client"
-  info " [4] Start microserver (only .conf)"
-  info " [5] Regenerate configuration file (.conf) for a client"
-  info " [Q] Quit"
-  info "==============================================="
-  ask choice "Select an option" ""
+  if [ ! -n "$AUTO_CHOICE" ]; then
+    info ""
+    info "===================== MENU ====================="
+    info " [1] Add client"
+    info " [2] Modify client"
+    info " [3] Delete client"
+    info " [4] Start microserver (only .conf)"
+    info " [5] Regenerate configuration file (.conf) for a client"
+    info " [6] Test VPN configuration"
+    info " [Q] Quit"
+    info "==============================================="
+  fi
+
+  if [ -n "$AUTO_CHOICE" ]; then
+    choice="$AUTO_CHOICE"
+  else
+    ask choice "Select an option" ""
+  fi
   case "$choice" in
-    1) step1_add_client ;;
-    2) step2_modify_client ;;
-    3) step3_delete_client ;;
-    4) step4_start_microserver ;;
-    5) step5_regenerate_config ;;
+    1) add_client ;;
+    2) modify_client ;;
+    3) delete_client ;;
+    4) start_microserver ;;
+    5) regenerate_config ;;
+    6) test_vpn_configuration ;;
     q|Q) success "Exiting."; break ;;
     *) warning "Invalid choice." ;;
   esac
+  
+  if [ -n "$AUTO_CHOICE" ]; then
+    break
+  fi
 done
 
 exit 0

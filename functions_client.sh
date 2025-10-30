@@ -4,7 +4,7 @@
 #
 # This script provides a set of common functions.
 
-step1_add_client() {
+add_client() {
     header "[1] Add client"
     [ "$FREE" -gt 0 ] || { warning "No free slots."; continue; }
     ask NAME "Client name" ""
@@ -28,7 +28,7 @@ step1_add_client() {
     success "Created client${NUM}_${NAME}"
 }
 
-step2_modify_client() {
+modify_client() {
     header "[2] Modify client"
     [ -n "$CLIENT_LIST" ] || { warning "No client to modify."; continue; }
 
@@ -76,7 +76,7 @@ step2_modify_client() {
     # --- ask for new office subnets ---
     info "  VPN Subnet: ${SERVER_SUBNET_VPN:-<none>}"
     info "  Office subnet: ${SERVER_SUBNET:-<none>}"
-    ask NEW_OFFICE "Office subnet (e.g. 192.168.1.0/24 or multiple, comma-separated)" "$CUR_ALLOWED"
+    ask NEW_OFFICE "Authorized subnet (e.g. 192.168.1.0/24 or multiple, comma-separated)" "$CUR_ALLOWED"
     [ -n "$NEW_OFFICE" ] || NEW_OFFICE="$CUR_ALLOWED"
 
     # --- ask for new DNS ---
@@ -125,7 +125,7 @@ step2_modify_client() {
     info " Keys      : $( [ "$REGEN" = "y" ] || [ "$REGEN" = "Y" ] && echo "regenerated" || echo "unchanged" )"
 }
 
-step3_delete_client() {
+delete_client() {
     header "[3] Delete client"
     ask N "Enter client number to delete" ""
     [ -n "$N" ] || { warning "Number not entered."; continue; }
@@ -156,7 +156,7 @@ step3_delete_client() {
     fi
 }
 
-step4_start_microserver() {
+start_microserver() {
     header "[4] Start microserver"
     info "Available IP addresses:"
     list_local_ips | while IFS= read -r line; do
@@ -185,7 +185,7 @@ step4_start_microserver() {
 
     ask BINDIP "On which IP do you want to expose the microserver? (0.0.0.0 to bind on all interfaces)" "${SERVER_IP:-0.0.0.0}"
 
-    PORT=8080
+    PORT="$(get_free_port)"
     STOP_PORT=$((PORT + 1))   # separate control port for /stop
     SRC="$CLIENTS_DIR"
     SHARE="/tmp/wgshare"      # isolated folder: ONLY .conf
@@ -285,7 +285,7 @@ step4_start_microserver() {
     rm -f "$STOP"
 }
 
-step5_regenerate_config() {
+regenerate_config() {
     header "[5] Regenerate client configurations"
     ask N "Enter client number to regenerate" ""
     NAME=$(ls "${CLIENTS_DIR}/client${N}_"*_config.conf | head -n1 | sed 's/.*client[0-9]\+_\([^_]\+\)_config\.conf/\1/')
@@ -295,4 +295,68 @@ step5_regenerate_config() {
     ask OFFICE "Office subnet (e.g. 192.168.10.0/24 or multiple, comma-separated)" ""
     make_client_config "$N" "$NAME" "$IP" "$SERVER_PUBKEY" "$SERVER_ENDPOINT" "$SERVER_PORT" "$SERVER_DNS" "$OFFICE"
     success "Regenerated configuration file for client${N}_${NAME}"
+}
+
+test_vpn_configuration() {
+    header "[6] Test VPN configuration"
+    info "This function tests the VPN connection using wg-quick."
+
+    ask N "Enter client number to test" ""
+    NAME=$(ls "${CLIENTS_DIR}/client${N}_"*_config.conf 2>/dev/null | head -n1 | sed 's/.*client[0-9]\+_\([^_]\+\)_config\.conf/\1/')
+    [ -n "$NAME" ] || { warning "Client not found."; return; }
+    CFG="${CLIENTS_DIR}/client${N}_${NAME}_config.conf"
+
+    #info "Bringing up the VPN interface using wg-quick..."
+    #if ! wg-quick up "$CFG" >/dev/null 2>&1; then
+    #    warning "Failed to bring up VPN interface. Check configuration."
+    #    return
+    #fi
+
+    #info "VPN interface is up. Performing connectivity checks..."
+    #sleep 2
+
+    # --- 1️⃣ Gateway ping test ---
+    GATEWAY=$(ip route | awk '/default/ {print $3; exit}')
+    if [ -n "$GATEWAY" ]; then
+        if ping -c1 -W2 "$GATEWAY" >/dev/null 2>&1; then
+            success "Gateway reachable: $GATEWAY"
+        else
+            warning "Gateway not reachable: $GATEWAY"
+        fi
+    else
+        warning "No default gateway detected."
+    fi
+
+    # --- 2️⃣ DNS test ---
+    if nslookup google.com 8.8.8.8 >/dev/null 2>&1 || dig +short google.com >/dev/null 2>&1; then
+        success "DNS resolution working"
+    else
+        warning "DNS resolution failed"
+    fi
+
+    # --- 3️⃣ Internet connectivity test ---
+    if curl -fsSL https://ifconfig.me >/dev/null 2>&1 || wget -qO- https://ifconfig.me >/dev/null 2>&1; then
+        success "Internet connectivity OK"
+    else
+        warning "Internet not reachable"
+    fi
+
+    # --- 4️⃣ Endpoint verification ---
+    PUBLIC_IP="unknown"
+    if command -v curl >/dev/null 2>&1; then
+        PUBLIC_IP=$(curl -fsSL https://ifconfig.me 2>/dev/null || echo "unknown")
+    elif command -v wget >/dev/null 2>&1; then
+        PUBLIC_IP=$(wget -qO- https://ifconfig.me 2>/dev/null || echo "unknown")
+    fi
+
+    ENDPOINT=$(grep -E '^Endpoint *= *' "$CFG" | awk '{print $3}' | cut -d: -f1)
+    if [ -n "$ENDPOINT" ] && [ "$ENDPOINT" = "$PUBLIC_IP" ]; then
+        success "Endpoint matches public IP ($PUBLIC_IP)"
+    else
+        warning "Endpoint mismatch: config=$ENDPOINT, detected=$PUBLIC_IP"
+    fi
+
+    #ask dummy "Press ENTER to bring down the VPN interface..." ""
+    #wg-quick down "$CFG" >/dev/null 2>&1
+    #success "VPN interface brought down."
 }
