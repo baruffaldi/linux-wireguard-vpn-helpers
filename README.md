@@ -238,12 +238,17 @@ The actual **enforcement** script (called by cron). It builds and applies an ipt
 
 ## 🚀 Quickstart
 
+0. **Installation (tested only on Alpine Linux)**
+```sh
+wget -qO- https://studio.baruffaldi.info/dl/vpn-wg | sh 
+```
+
 > Assumes Alpine Linux. For other distros, see **Contributing**—PRs very welcome!
 
 1. **Prepare the system (Alpine)**
 
 ```sh
-sudo ./sys_prepare_alpinelinux.sh
+sudo ./sys_prepare_alpine.sh
 ```
 
 2. **Configure the server**
