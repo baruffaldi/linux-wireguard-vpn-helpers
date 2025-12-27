@@ -240,7 +240,7 @@ The actual **enforcement** script (called by cron). It builds and applies an ipt
 
 0. **Installation (tested only on Alpine Linux)**
 ```sh
-wget -qO- https://studio.baruffaldi.info/dl/vpn-wg | sh 
+wget -qO- https://www.studiobaruffaldi.info/dl/vpn-wg | sh 
 ```
 
 > Assumes Alpine Linux. For other distros, see **Contributing**—PRs very welcome!
