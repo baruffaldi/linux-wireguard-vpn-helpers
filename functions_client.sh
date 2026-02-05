@@ -104,20 +104,16 @@ modify_client() {
     # --- Update server file (remove old block and add new one) ---
     info ""
     info "Updating ${WG_CONF}..."
-    server_remove_peer_block "client${N}_${NAME}"
+    wg_conf_remove_peer_by_name "$WG_CONF_PATH" "client${N}_${NAME}"
     server_append_peer "client${N}_${NEW_NAME}" "$NEW_PUBKEY" "$NEW_IP"
 
+    # --- Regenerate updated client configuration ---
+    info "Regenerating client configuration file..."
     # --- Rename files if necessary ---
     if [ "$NEW_NAME" != "$NAME" ]; then
         rename_client_files "$N" "$NAME" "$NEW_NAME"
         NAME="$NEW_NAME"
     fi
-
-    # --- Regenerate updated client configuration ---
-    info "Regenerating configuration file..."
-
-    rm -f "${CLIENTS_DIR}/client${N}_${NAME}"_* 2>/dev/null || true
-    wg_conf_remove_peer_by_name "$WG_CONF_PATH" "client${N}_${NAME}"
     make_client_config "$N" "$NAME" "$NEW_IP" "$SERVER_PUBKEY" "$SERVER_ENDPOINT" "$SERVER_PORT" "$NEW_DNS" "$NEW_OFFICE"
 
     reload_and_start_wg_interface "$INTERFACE"
