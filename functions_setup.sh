@@ -250,19 +250,25 @@ generate_report() {
   fi
   [ -z "$DYNDNS" ] && DYNDNS="(none)"
 
-  VPN_PORT=""
-  if [ -f /etc/wireguard/wg0.conf ]; then
-    VPN_PORT=$(grep -E '^[[:space:]]*ListenPort[[:space:]]*=' /etc/wireguard/wg0.conf \
-               | head -n1 \
-               | sed -E 's/^[^=]+=[[:space:]]*//' \
-               | tr -d '\r' \
-               | xargs || true)
-  fi
-  [ -z "$VPN_PORT" ] && VPN_PORT="(unknown)"
+  for WGCONF in /etc/wireguard/wg*.conf; do
+    # se il glob non matcha nulla
+    [ -e "$WGCONF" ] || continue
 
-  echo "\"Public IP\",\"$PUBLIC_IP\",\"\",\"$(date '+%Y-%m-%d %H:%M:%S')\"" >> "$REPORT_PATH"
-  echo "\"DynDNS Host\",\"$DYNDNS\",\"\",\"$(date '+%Y-%m-%d %H:%M:%S')\"" >> "$REPORT_PATH"
-  echo "\"VPN Port\",\"$VPN_PORT\",\"\",\"$(date '+%Y-%m-%d %H:%M:%S')\"" >> "$REPORT_PATH"
+    IFACE="$(basename "$WGCONF" .conf)"
+
+    VPN_PORT=$(grep -E '^[[:space:]]*ListenPort[[:space:]]*=' "$WGCONF" \
+              | head -n1 \
+              | sed -E 's/^[^=]+=[[:space:]]*//' \
+              | tr -d '\r' \
+              | xargs || true)
+
+    [ -z "$VPN_PORT" ] && VPN_PORT="(unknown)"
+
+    echo "\"Public IP\",\"$PUBLIC_IP\",\"\",\"$(date '+%Y-%m-%d %H:%M:%S')\"" >> "$REPORT_PATH"
+    echo "\"DynDNS Host\",\"$DYNDNS\",\"\",\"$(date '+%Y-%m-%d %H:%M:%S')\"" >> "$REPORT_PATH"
+    echo "\"VPN Port\",\"$VPN_PORT\",\"\",\"$(date '+%Y-%m-%d %H:%M:%S')\"" >> "$REPORT_PATH"
+    echo "" >> "$REPORT_PATH"
+  done
 
   success "Report generated and saved to: $REPORT_PATH"
   info ""

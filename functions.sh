@@ -25,6 +25,15 @@ install_wg() {
   esac
 }
 
+reload_and_start_wg_interface() {
+  INTERFACE="$1"
+  [ -z "$INTERFACE" ] && INTERFACE="wg0"
+  info "Restarting WireGuard interface $INTERFACE..."
+  wg syncconf $INTERFACE <(wg-quick strip $INTERFACE)
+  wg-quick down "$INTERFACE" >/dev/null 2>&1 || true
+  wg-quick up "$INTERFACE" >/dev/null 2>&1 || die "Failed to bring up interface $INTERFACE"
+}
+
 # --- Function to read an existing value from wg0.conf ---
 get_conf_value() {
   key="$1"
