@@ -118,6 +118,7 @@ modify_client() {
     make_client_config "$N" "$NAME" "$NEW_IP" "$SERVER_PUBKEY" "$SERVER_ENDPOINT" "$SERVER_PORT" "$NEW_DNS" "$NEW_OFFICE"
 
     reload_and_start_wg_interface "$INTERFACE"
+    
     info ""
     success "Client updated successfully:"
     info " Name      : client${N}_${NAME}"

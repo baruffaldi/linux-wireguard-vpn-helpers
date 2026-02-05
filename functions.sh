@@ -26,16 +26,44 @@ install_wg() {
 }
 
 reload_and_start_wg_interface() {
-  local INTERFACE="$1"
-  [ -z "$INTERFACE" ] && INTERFACE="wg0"
-  info "Restarting WireGuard interface $INTERFACE..."
-  wg show "$INTERFACE" >/dev/null 2>&1 && { tmp="$(mktemp)"; \
-  wg-quick strip "$INTERFACE" >"$tmp" 2>/dev/null && wg syncconf \
-  "$INTERFACE" "$tmp" >/dev/null 2>&1 || true; rm -f "$tmp"; } || true
-  rc-service wg-quick.$INTERFACE stop >/dev/null 2>&1 || true
-  rc-service wg-quick.$INTERFACE zap >/dev/null 2>&1 || true
-  wg-quick up /etc/wireguard/$INTERFACE.conf >/dev/null 2>&1 || true
-  rc-service wg-quick.$INTERFACE start >/dev/null 2>&1 || true
+  local IFACE="${1:-wg0}"
+  local CONF="/etc/wireguard/${IFACE}.conf"
+  local tmp=""
+
+  info "WireGuard reload+restart for ${IFACE}..."
+
+  # 0) conf must exist (otherwise nothing sensible to do)
+  if [ ! -f "$CONF" ]; then
+    info "Missing WireGuard config: $CONF"
+    return 1
+  fi
+
+  # 1) Reload config "live" if interface exists (no downtime)
+  if wg show "$IFACE" >/dev/null 2>&1; then
+    tmp="$(mktemp 2>/dev/null || true)"
+    if [ -n "$tmp" ] && wg-quick strip "$IFACE" >"$tmp" 2>/dev/null; then
+      wg syncconf "$IFACE" "$tmp" >/dev/null 2>&1 || true
+    fi
+    [ -n "$tmp" ] && rm -f "$tmp" >/dev/null 2>&1 || true
+  fi
+
+  # 2) Restart interface (down/up) to ensure IP/routes/rules are refreshed
+  wg-quick down "$CONF" >/dev/null 2>&1 || true
+  wg-quick up   "$CONF" >/dev/null 2>&1 || true
+
+  # 3) Restart OpenRC service (so rc state is aligned)
+  rc-service "wg-quick.${IFACE}" stop >/dev/null 2>&1 || true
+  rc-service "wg-quick.${IFACE}" zap  >/dev/null 2>&1 || true
+  rc-service "wg-quick.${IFACE}" start >/dev/null 2>&1 || true
+
+  # 4) Final sanity check (optional but useful)
+  if wg show "$IFACE" >/dev/null 2>&1; then
+    info "OK: ${IFACE} is up"
+    return 0
+  fi
+
+  info "WARN: ${IFACE} not present after restart (check wg-quick / service logs)"
+  return 1
 }
 
 # --- Function to read an existing value from wg0.conf ---
