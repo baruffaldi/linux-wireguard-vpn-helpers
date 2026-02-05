@@ -25,7 +25,6 @@ add_client() {
     generate_client_keys "$NUM" "$NAME"
     make_client_config "$NUM" "$NAME" "$IP" "$SERVER_PUBKEY" "$SERVER_ENDPOINT" "$SERVER_PORT" "$SERVER_DNS" "$OFFICE"
     server_append_peer "client${NUM}_${NAME}" "$(cat "${CLIENTS_DIR}/client${NUM}_${NAME}_public.key")" "${IP}"
-    reload_and_start_wg_interface "$INTERFACE"
     success "Created client${NUM}_${NAME}"
 }
 

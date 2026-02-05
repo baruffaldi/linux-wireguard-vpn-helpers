@@ -206,7 +206,7 @@ EOF
     chmod 600 "${base}_config.conf"
     info ""
     info "Restarting interface..."
-    wg-quick down $INTERFACE && wg-quick up $INTERFACE >/dev/null 2>&1
+    reload_and_start_wg_interface "$INTERFACE"
 }
 
 rename_client_files() {
