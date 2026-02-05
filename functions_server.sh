@@ -76,8 +76,8 @@ server_configure() {
 
     # Calculate network base from IP
     IFS=. read -r a b c d <<EOF
-    $SERVER_IP
-    EOF
+$SERVER_IP
+EOF
 
     # Calculate the correct subnet base aligned to the CIDR block
     block_size=$(( 2 ** (32 - NETMASK) ))
@@ -187,7 +187,7 @@ server_configure() {
     # Max Clients: ${NUM_CLIENTS}
     # Clients Isolation: ${CLIENTS_ISOLATION}
     # Clients Authorized Subnet: ${CLIENTS_SUBNET_VPN}
-    EOF
+EOF
     if [ -n "$DNS" ]; then
     echo "# DNS: $DNS" >> "$WG_CONF_PATH"
     fi
