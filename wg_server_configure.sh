@@ -58,6 +58,7 @@ OLD_ADDR="$(get_conf_value Address | awk -F'/' '{print $1}')"
 OLD_PORT="$(get_conf_value ListenPort)"
 OLD_ENDPOINT="$(conf_comment_get "Endpoint Host")"
 OLD_DNS="$(conf_comment_get "DNS")"
+OLD_MAXCLIENTS="$(conf_comment_get "Max Clients")"
 
 # --- Find the subnet to share in the VPN ---
 info ""
@@ -108,7 +109,7 @@ fi
 
 # --- Prompt ---
 ask SERVER_IP "Enter the VPN server IP" "${OLD_ADDR:-100.64.1.1}"
-ask NUM_CLIENTS "How many clients will connect to this server?" "1"
+ask NUM_CLIENTS "How many clients will connect to this server?" "${OLD_MAXCLIENTS:-1}"
 ask PORT "Enter the WireGuard UDP port" "${OLD_PORT:-51234}"
 ask ENDPOINT "Enter the public endpoint (hostname or public IP)" "${OLD_ENDPOINT:-$(public_ip_lookup)}"
 ask DNS "Set a DNS for clients ($OLD_DNS, 1.1.1.1 or empty for none)" ""
