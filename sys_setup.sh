@@ -106,7 +106,7 @@ while true; do
     ask choice "Select an option" ""
   fi
   case "$choice" in
-    0) update_system ;;
+    0) update_system && exit 0 && setup-vpn ;;
     1) change_root_password ;;
     2) show_network_info ;;
     3) setup_networking ;;

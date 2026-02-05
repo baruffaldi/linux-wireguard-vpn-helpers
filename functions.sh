@@ -211,25 +211,6 @@ calc_netmask() {
   fi
 }
 
-# --- helper: check if IP is inside CIDR ---
-ip_in_subnet() {
-  ip="$1"; net="$2"; maskbits="$3"
-
-  ip2int() {
-    IFS=. read -r a b c d <<EOF
-$1
-EOF
-    echo $(( (a<<24) + (b<<16) + (c<<8) + d ))
-  }
-
-  ip_int=$(ip2int "$ip") || return 1
-  net_int=$(ip2int "$net") || return 1
-  [ -n "$maskbits" ] || return 1
-  mask=$(( (0xFFFFFFFF << (32-maskbits)) & 0xFFFFFFFF ))
-
-  [ $((ip_int & mask)) -eq $((net_int & mask)) ]
-}
-
 # --- helper: lista IP in formato "iface: ip[/mask]" (ip) o "iface: ip ..." (ifconfig) ---
 list_local_ips() {
   if have_cmd ip; then
@@ -241,31 +222,6 @@ list_local_ips() {
       /inet / {print iface": "$2" "$0}
     '
   fi
-}
-
-# --- Calculate IP range from address and netmask ---
-calc_range() {
-  ip="$1"
-  maskbits="$2"
-
-  IFS=. read -r i1 i2 i3 i4 <<EOF
-$ip
-EOF
-  mask=$((0xFFFFFFFF << (32 - maskbits) & 0xFFFFFFFF))
-  ipnum=$(( (i1 << 24) + (i2 << 16) + (i3 << 8) + i4 ))
-  net=$(( ipnum & mask ))
-  bcast=$(( net + ( (1 << (32 - maskbits)) - 1 ) ))
-  start=$(( net + 1 ))
-  end=$(( bcast - 1 ))
-
-  ip_to_str() { printf "%d.%d.%d.%d" $(( ($1>>24)&255 )) $(( ($1>>16)&255 )) $(( ($1>>8)&255 )) $(( $1&255 )); }
-
-  net_str=$(ip_to_str "$net")
-  start_str=$(ip_to_str "$start")
-  end_str=$(ip_to_str "$end")
-  bcast_str=$(ip_to_str "$bcast")
-
-  echo "$net_str - $bcast_str|$start_str - $end_str"
 }
 
 show_network_info_details() {
@@ -346,4 +302,48 @@ get_free_port() {
 public_ip_lookup() {
   PUBLIC_IP=$(curl -fsSL https://ifconfig.me 2>/dev/null || wget -qO- https://ifconfig.me 2>/dev/null || echo "unknown")
   echo "$PUBLIC_IP"
+}
+
+# --- helper: check if IP is inside CIDR ---
+ip_in_subnet() {
+  ip="$1"; net="$2"; maskbits="$3"
+
+  ip2int() {
+    IFS=. read -r a b c d <<EOF
+$1
+EOF
+    echo $(( (a<<24) + (b<<16) + (c<<8) + d ))
+  }
+
+  ip_int=$(ip2int "$ip") || return 1
+  net_int=$(ip2int "$net") || return 1
+  [ -n "$maskbits" ] || return 1
+  mask=$(( (0xFFFFFFFF << (32-maskbits)) & 0xFFFFFFFF ))
+
+  [ $((ip_int & mask)) -eq $((net_int & mask)) ]
+}
+
+# --- Calculate IP range from address and netmask ---
+calc_range() {
+  ip="$1"
+  maskbits="$2"
+
+  IFS=. read -r i1 i2 i3 i4 <<EOF
+$ip
+EOF
+  mask=$((0xFFFFFFFF << (32 - maskbits) & 0xFFFFFFFF))
+  ipnum=$(( (i1 << 24) + (i2 << 16) + (i3 << 8) + i4 ))
+  net=$(( ipnum & mask ))
+  bcast=$(( net + ( (1 << (32 - maskbits)) - 1 ) ))
+  start=$(( net + 1 ))
+  end=$(( bcast - 1 ))
+
+  ip_to_str() { printf "%d.%d.%d.%d" $(( ($1>>24)&255 )) $(( ($1>>16)&255 )) $(( ($1>>8)&255 )) $(( $1&255 )); }
+
+  net_str=$(ip_to_str "$net")
+  start_str=$(ip_to_str "$start")
+  end_str=$(ip_to_str "$end")
+  bcast_str=$(ip_to_str "$bcast")
+
+  echo "$net_str - $bcast_str|$start_str - $end_str"
 }
