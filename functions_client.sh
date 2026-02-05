@@ -39,6 +39,7 @@ modify_client() {
         echo "$CLIENT_LIST" | awk '{printf " %2d) client%s_%s\n", $1, $1, $2}' | while IFS= read -r line; do
         info "$line"
         done || warning " (none)"
+    info ""
 
     ask N "Enter client number to modify" ""
     [ -n "$N" ] || { warning "Number not entered."; continue; }
@@ -144,7 +145,8 @@ delete_client() {
         echo "$CLIENT_LIST" | awk '{printf " %2d) client%s_%s\n", $1, $1, $2}' | while IFS= read -r line; do
         info "$line"
         done || warning " (none)"
-        
+    info ""
+
     ask N "Enter client number to delete" ""
     [ -n "$N" ] || { warning "Number not entered."; continue; }
 
