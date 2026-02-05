@@ -136,7 +136,7 @@ VPN_RANGE_NET="$(echo "$RANGE_INFO" | cut -d'|' -f1)"
 VPN_RANGE_CLIENTS="$(echo "$RANGE_INFO" | cut -d'|' -f2)"
 
 if [ "$CLIENTS_ISOLATION" -eq 1 ]; then
-  CLIENTS_SUBNET_VPN="${ADDRESS}/32"
+  CLIENTS_SUBNET_VPN="${SERVER_IP}/32"
 else
   CLIENTS_SUBNET_VPN="${SUBNET_VPN}"
 fi
