@@ -115,10 +115,13 @@ modify_client() {
 
     # --- Regenerate updated client configuration ---
     info "Regenerating configuration file..."
+
+    rm -f "${CLIENTS_DIR}/client${N}_${NAME}"_* 2>/dev/null || true
+    sed -i "/# client${N}_${NAME}/,/^$/d" "$WG_CONF_PATH" 2>/dev/null || true
     make_client_config "$N" "$NAME" "$NEW_IP" "$SERVER_PUBKEY" "$SERVER_ENDPOINT" "$SERVER_PORT" "$NEW_DNS" "$NEW_OFFICE"
 
     reload_and_start_wg_interface "$INTERFACE"
-    
+
     info ""
     success "Client updated successfully:"
     info " Name      : client${N}_${NAME}"
