@@ -26,16 +26,34 @@ install_wg() {
 }
 
 reload_and_start_wg_interface() {
-  INTERFACE="$1"
-  [ -z "$INTERFACE" ] && INTERFACE="wg0"
-  info "Restarting WireGuard interface $INTERFACE..."
-  wg show "$INTERFACE" >/dev/null 2>&1 && { tmp="$(mktemp)"; \
-  wg-quick strip "$INTERFACE" >"$tmp" 2>/dev/null && wg syncconf \
-  "$INTERFACE" "$tmp" >/dev/null 2>&1 || true; rm -f "$tmp"; } || true
-  rc-service wg-quick.$INTERFACE stop >/dev/null 2>&1 || true
-  rc-service wg-quick.$INTERFACE zap >/dev/null 2>&1 || true
-  wg-quick up /etc/wireguard/$INTERFACE.conf >/dev/null 2>&1 || true
-  rc-service wg-quick.$INTERFACE start >/dev/null 2>&1 || true
+  local INTERFACE="${1:-wg0}"
+  local CONF="/etc/wireguard/${INTERFACE}.conf"
+  local tmp=""
+
+  info "Restarting WireGuard interface ${INTERFACE}..."
+
+  # 1) syncconf SOLO se l'interfaccia esiste davvero
+  if wg show "${INTERFACE}" >/dev/null 2>&1; then
+    tmp="$(mktemp)" || true
+    if [ -n "$tmp" ] && wg-quick strip "${INTERFACE}" >"$tmp" 2>/dev/null; then
+      wg syncconf "${INTERFACE}" "$tmp" >/dev/null 2>&1 || true
+    fi
+    [ -n "$tmp" ] && rm -f "$tmp" >/dev/null 2>&1 || true
+  fi
+
+  # 2) ferma/ripulisci OpenRC (non importa se fallisce)
+  rc-service "wg-quick.${INTERFACE}" stop >/dev/null 2>&1 || true
+  rc-service "wg-quick.${INTERFACE}" zap  >/dev/null 2>&1 || true
+
+  # 3) alza SOLO se esiste la conf
+  if [ -f "$CONF" ]; then
+    wg-quick up "$CONF" >/dev/null 2>&1 || true
+  else
+    info "WireGuard config missing: $CONF (skip wg-quick up)"
+  fi
+
+  # 4) prova ad avviare il servizio (se esiste)
+  rc-service "wg-quick.${INTERFACE}" start >/dev/null 2>&1 || true
 }
 
 # --- Function to read an existing value from wg0.conf ---
