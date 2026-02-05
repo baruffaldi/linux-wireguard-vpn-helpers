@@ -28,41 +28,40 @@ install_wg() {
 reload_and_start_wg_interface() {
   local IFACE="${1:-wg0}"
   local CONF="/etc/wireguard/${IFACE}.conf"
+  local LOG="/tmp/wg-${IFACE}.log"
   local tmp=""
 
-  info "WireGuard reload+restart for ${IFACE}..."
+  info "WireGuard reload+restart for ${IFACE} (log: $LOG)..."
 
-  # 0) conf must exist (otherwise nothing sensible to do)
-  if [ ! -f "$CONF" ]; then
-    info "Missing WireGuard config: $CONF"
-    return 1
-  fi
+  [ -f "$CONF" ] || { info "Missing config: $CONF"; return 1; }
 
-  # 1) Reload config "live" if interface exists (no downtime)
+  : >"$LOG"
+
+  # reload live (solo se esiste)
   if wg show "$IFACE" >/dev/null 2>&1; then
     tmp="$(mktemp 2>/dev/null || true)"
-    if [ -n "$tmp" ] && wg-quick strip "$IFACE" >"$tmp" 2>/dev/null; then
-      wg syncconf "$IFACE" "$tmp" >/dev/null 2>&1 || true
+    if [ -n "$tmp" ] && wg-quick strip "$IFACE" >"$tmp" 2>>"$LOG"; then
+      wg syncconf "$IFACE" "$tmp" >>"$LOG" 2>&1 || true
     fi
     [ -n "$tmp" ] && rm -f "$tmp" >/dev/null 2>&1 || true
   fi
 
-  # 2) Restart interface (down/up) to ensure IP/routes/rules are refreshed
-  wg-quick down "$CONF" >/dev/null 2>&1 || true
-  wg-quick up   "$CONF" >/dev/null 2>&1 || true
+  # restart interfaccia (qui NON sopprimiamo l'errore: lo logghiamo)
+  wg-quick down "$CONF" >>"$LOG" 2>&1 || true
+  wg-quick up   "$CONF" >>"$LOG" 2>&1 || true
 
-  # 3) Restart OpenRC service (so rc state is aligned)
-  rc-service "wg-quick.${IFACE}" stop >/dev/null 2>&1 || true
-  rc-service "wg-quick.${IFACE}" zap  >/dev/null 2>&1 || true
-  rc-service "wg-quick.${IFACE}" start >/dev/null 2>&1 || true
+  # restart servizio
+  rc-service "wg-quick.${IFACE}" stop  >>"$LOG" 2>&1 || true
+  rc-service "wg-quick.${IFACE}" zap  >>"$LOG" 2>&1 || true
+  rc-service "wg-quick.${IFACE}" start >>"$LOG" 2>&1 || true
 
-  # 4) Final sanity check (optional but useful)
   if wg show "$IFACE" >/dev/null 2>&1; then
     info "OK: ${IFACE} is up"
     return 0
   fi
 
-  info "WARN: ${IFACE} not present after restart (check wg-quick / service logs)"
+  info "WARN: ${IFACE} not present. Last log lines:"
+  tail -n 60 "$LOG" 2>/dev/null || true
   return 1
 }
 
