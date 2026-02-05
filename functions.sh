@@ -29,7 +29,9 @@ reload_and_start_wg_interface() {
   INTERFACE="$1"
   [ -z "$INTERFACE" ] && INTERFACE="wg0"
   info "Restarting WireGuard interface $INTERFACE..."
-  wg syncconf $INTERFACE <(wg-quick strip $INTERFACE) >/dev/null 2>&1 || true
+  wg show "$INTERFACE" >/dev/null 2>&1 && { tmp="$(mktemp)"; \
+  wg-quick strip "$INTERFACE" >"$tmp" 2>/dev/null && wg syncconf \
+  "$INTERFACE" "$tmp" >/dev/null 2>&1 || true; rm -f "$tmp"; } || true
   rc-service wg-quick.$INTERFACE stop >/dev/null 2>&1 || true
   rc-service wg-quick.$INTERFACE zap >/dev/null 2>&1 || true
   wg-quick up /etc/wireguard/$INTERFACE.conf >/dev/null 2>&1 || true

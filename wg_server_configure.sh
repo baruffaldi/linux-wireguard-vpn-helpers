@@ -152,6 +152,16 @@ else
 fi
 success "VPN subnet will be = ${SUBNET_VPN}"
 success "VPN IP range       = ${VPN_RANGE_NET}"
+success "Max clients       = ${NUM_CLIENTS}"
+success "Listening on port  = ${PORT}"
+success "Endpoint           = ${ENDPOINT}"
+if [ -n "$DNS" ]; then
+  success "DNS for clients    = ${DNS}"
+else
+  success "DNS for clients    = (none)"
+fi
+success "Client isolation         = ${CLIENTS_ISOLATION}"
+success "Client authorized subnet = ${CLIENTS_SUBNET_VPN}"
 info ""
 
 # --- Generate keys if missing ---
@@ -259,6 +269,9 @@ info " Client range: $VPN_RANGE_CLIENTS"
 info " Port        : $PORT"
 info " Endpoint    : $ENDPOINT"
 info " Max clients : $NUM_CLIENTS"
+info " Client isolation : $CLIENTS_ISOLATION"
+info " Client authorized subnet : $CLIENTS_SUBNET_VPN"
+info " Client DNS  : ${DNS:-(none)}"
 info ""
 
 # --- Start the interface ---
