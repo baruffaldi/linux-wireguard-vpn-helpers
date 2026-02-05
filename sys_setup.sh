@@ -1,5 +1,5 @@
 #!/bin/sh
-# wg_full_setup_menu.sh
+# sys_setup.sh
 # Interactive orchestrator for linux-wireguard-vpn-helpers
 # POSIX /bin/sh compatible
 

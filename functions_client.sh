@@ -20,7 +20,7 @@ add_client() {
     fi
 
     # Retrieve the DNS from the server file ${WG_CONF_PATH}
-    ask SERVER_DNS "DNS (e.g. 1.1.1.1 or empty for none)" "$SERVER_DNS"
+    ask SERVER_DNS "DNS (${SERVER_DNS}, 1.1.1.1 or empty for none)" ""
 
     generate_client_keys "$NUM" "$NAME"
     make_client_config "$NUM" "$NAME" "$IP" "$SERVER_PUBKEY" "$SERVER_ENDPOINT" "$SERVER_PORT" "$SERVER_DNS" "$OFFICE"

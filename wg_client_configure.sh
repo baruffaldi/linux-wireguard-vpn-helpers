@@ -84,7 +84,7 @@ while true; do
   info ""
   info "Supported clients : $MAX_CLIENTS"
   info "Configured clients: $CLIENTS"
-  info "Free clients      : $FREE"
+  info "Free slots clients: $FREE"
   info ""
   info "List of configured clients:"
   CLIENT_LIST=$(list_clients)
@@ -126,5 +126,3 @@ while true; do
     break
   fi
 done
-
-exit 0
