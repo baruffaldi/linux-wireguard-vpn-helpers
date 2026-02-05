@@ -275,6 +275,12 @@ info " Client isolation: $CLIENTS_ISOLATION"
 info " Client authorized VPN subnet: $CLIENTS_SUBNET_VPN"
 info ""
 
+if [ "$OLD_CLIENTS_ISOLATION" != "$CLIENTS_ISOLATION" ] || [ "$OLD_MAXCLIENTS" != "$NUM_CLIENTS" ]; then
+  warning "Note: Changes to 'Max Clients' or 'Clients Isolation' require regenerating client configurations."
+  warning "Please update existing clients accordingly."
+  info ""
+fi
+
 # --- Start the interface ---
 info "Starting the interface..."
 success "Everything is ok!"
