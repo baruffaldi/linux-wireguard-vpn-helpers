@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+GENERATED_PUBKEY=0
+GENERATED_PRIVKEY=0
+
 resolve_realpath() {
   f="$1"
   while [ -L "$f" ]; do f="$(readlink "$f")"; done
@@ -147,11 +150,13 @@ if [ ! -f "$PRIVATE_KEY" ]; then
   info "Generating new server private key..."
   umask 077
   wg genkey > "$PRIVATE_KEY"
+  GENERATED_PRIVKEY=1
 fi
 
 if [ ! -f "$PUBLIC_KEY" ]; then
   info "Generating new server public key..."
   wg pubkey < "$PRIVATE_KEY" > "$PUBLIC_KEY"
+  GENERATED_PUBKEY=1
 fi
 
 # --- Stop interface ---
@@ -222,8 +227,12 @@ success "Configuration complete!"
 info ""
 info "Generated files:"
 info " - $WG_CONF_PATH"
-info " - $PRIVATE_KEY"
-info " - $PUBLIC_KEY"
+if [ $GENERATED_PRIVKEY -eq 1 ]; then
+  info " - $PRIVATE_KEY"
+fi
+if [ $GENERATED_PUBKEY -eq 1 ]; then
+  info " - $PUBLIC_KEY"
+fi
 info ""
 info "Main details:"
 info " Address     : $ADDRESS"
@@ -240,6 +249,3 @@ info ""
 info "Starting the interface..."
 success "Everything is ok!"
 info ""
-rc-service wg-quick.wg0 stop >/dev/null 2>&1
-rc-service wg-quick.wg0 start >/dev/null 2>&1
-wg-quick up $INTERFACE >/dev/null 2>&1
