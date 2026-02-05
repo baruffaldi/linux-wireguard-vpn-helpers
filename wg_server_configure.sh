@@ -59,6 +59,7 @@ OLD_PORT="$(get_conf_value ListenPort)"
 OLD_ENDPOINT="$(conf_comment_get "Endpoint Host")"
 OLD_DNS="$(conf_comment_get "DNS")"
 OLD_MAXCLIENTS="$(conf_comment_get "Max Clients")"
+OLD_CLIENTS_ISOLATION="$(conf_comment_get "Clients Isolation")"
 
 # --- Find the subnet to share in the VPN ---
 info ""
@@ -110,6 +111,7 @@ fi
 # --- Prompt ---
 ask SERVER_IP "Enter the VPN server IP" "${OLD_ADDR:-100.64.1.1}"
 ask NUM_CLIENTS "How many clients will connect to this server?" "${OLD_MAXCLIENTS:-1}"
+ask CLIENTS_ISOLATION "Do you want client isolation? (1/0)" "${OLD_CLIENTS_ISOLATION:-0}"
 ask PORT "Enter the WireGuard UDP port" "${OLD_PORT:-51234}"
 ask ENDPOINT "Enter the public endpoint (hostname or public IP)" "${OLD_ENDPOINT:-$(public_ip_lookup)}"
 ask DNS "Set a DNS for clients ($OLD_DNS, 1.1.1.1 or empty for none)" ""
@@ -133,10 +135,21 @@ RANGE_INFO="$(calc_range "$SERVER_IP" "$NETMASK")"
 VPN_RANGE_NET="$(echo "$RANGE_INFO" | cut -d'|' -f1)"
 VPN_RANGE_CLIENTS="$(echo "$RANGE_INFO" | cut -d'|' -f2)"
 
+if [ "$CLIENTS_ISOLATION" -eq 1 ]; then
+  CLIENTS_SUBNET_VPN="${ADDRESS}/32"
+else
+  CLIENTS_SUBNET_VPN="${SUBNET_VPN}"
+fi
+
 info ""
 success "Using Address      = ${ADDRESS}"
 success "Office subnet      = ${SUBNET}"
 success "Client range       = ${VPN_RANGE_CLIENTS}"
+if [ "${CLIENTS_ISOLATION}" -eq 1 ]; then
+  success "Client isolation   = enabled"
+else
+  success "Client isolation   = disabled"
+fi
 success "VPN subnet will be = ${SUBNET_VPN}"
 success "VPN IP range       = ${VPN_RANGE_NET}"
 info ""
@@ -207,6 +220,8 @@ PostDown = iptables -A FORWARD -o wg0 -j ACCEPT
 # Subnet: ${SUBNET}
 # Subnet VPN: ${SUBNET_VPN}
 # Max Clients: ${NUM_CLIENTS}
+# Clients Isolation: ${CLIENTS_ISOLATION}
+# Clients Authorized Subnet: ${CLIENTS_SUBNET_VPN}
 EOF
 if [ -n "$DNS" ]; then
   echo "# DNS: $DNS" >> "$WG_CONF_PATH"

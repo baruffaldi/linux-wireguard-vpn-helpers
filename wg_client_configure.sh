@@ -75,6 +75,8 @@ while true; do
   SERVER_ENDPOINT="$(conf_comment_get "Endpoint Host")"
   SERVER_DNS="$(conf_comment_get "DNS")"
   MAX_CLIENTS="$(conf_comment_get "Max Clients" || echo 254)"
+  CLIENTS_ISOLATION="$(conf_comment_get "Clients Isolation" || echo 0)"
+  CLIENTS_SUBNET_VPN="$(conf_comment_get "Clients Authorized Subnet" || echo "$SERVER_SUBNET_VPN")"
   BASE3="$(first_three "$SERVER_SUBNET_VPN")"
 
   CLIENTS=$(ls "$CLIENTS_DIR"/*_config.conf 2>/dev/null | wc -l || echo 0)

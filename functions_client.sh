@@ -14,8 +14,8 @@ add_client() {
     ask OFFICE "Office subnet (e.g. 192.168.1.0/24 or multiple, comma-separated)" "$SERVER_SUBNET"
 
     # Retrieve the Subnet from the server file ${WG_CONF_PATH}
-    if [ -n "$SERVER_SUBNET_VPN" ]; then
-        OFFICE="$SERVER_SUBNET_VPN,$OFFICE"
+    if [ -n "$CLIENTS_SUBNET_VPN" ]; then
+        OFFICE="$CLIENTS_SUBNET_VPN,$OFFICE"
         info "Final authorized subnet: $OFFICE"
     fi
 
