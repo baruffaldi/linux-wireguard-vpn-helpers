@@ -32,6 +32,14 @@ modify_client() {
     header "[2] Modify client"
     [ -n "$CLIENT_LIST" ] || { warning "No client to modify."; continue; }
 
+    info ""
+    info "List of configured clients:"
+    CLIENT_LIST=$(list_clients)
+    [ -n "$CLIENT_LIST" ] && \
+        echo "$CLIENT_LIST" | awk '{printf " %2d) client%s_%s\n", $1, $1, $2}' | while IFS= read -r line; do
+        info "$line"
+        done || warning " (none)"
+
     ask N "Enter client number to modify" ""
     [ -n "$N" ] || { warning "Number not entered."; continue; }
 
@@ -128,6 +136,15 @@ modify_client() {
 
 delete_client() {
     header "[3] Delete client"
+
+    info ""
+    info "List of configured clients:"
+    CLIENT_LIST=$(list_clients)
+    [ -n "$CLIENT_LIST" ] && \
+        echo "$CLIENT_LIST" | awk '{printf " %2d) client%s_%s\n", $1, $1, $2}' | while IFS= read -r line; do
+        info "$line"
+        done || warning " (none)"
+        
     ask N "Enter client number to delete" ""
     [ -n "$N" ] || { warning "Number not entered."; continue; }
 
