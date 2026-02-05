@@ -79,7 +79,7 @@ get_conf_value() {
   fi
 }
 
-wg_conf_remove_peer_by_name() {
+remove_peer_by_name() {
   conf="${1:?conf path required}"
   name="${2:?peer name required}"   # es: client2_noc
 

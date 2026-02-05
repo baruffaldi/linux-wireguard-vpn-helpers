@@ -1,5 +1,5 @@
 #!/bin/sh
-set -eu
+set +e
 
 if [ -n "${1:-}" ]; then
   AUTO_CHOICE="$1"
