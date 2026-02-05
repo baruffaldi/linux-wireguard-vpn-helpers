@@ -3,7 +3,9 @@
 # Interactive orchestrator for linux-wireguard-vpn-helpers
 # POSIX /bin/sh compatible
 
-set -eu
+set +e
+
+umask 077
 
 if [ -n "${1:-}" ]; then
   AUTO_CHOICE="$1"

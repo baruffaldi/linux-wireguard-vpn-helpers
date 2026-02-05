@@ -32,36 +32,35 @@ reload_and_start_wg_interface() {
   local tmp=""
 
   info "WireGuard reload+restart for ${IFACE} (log: $LOG)..."
+  : >"$LOG"
 
   [ -f "$CONF" ] || { info "Missing config: $CONF"; return 1; }
 
-  : >"$LOG"
+  # VALIDAZIONE prima di tentare l'up: se invalida, esci pulito senza rompere lo script
+  if ! wg-quick strip "$CONF" >/dev/null 2>>"$LOG"; then
+    info "Invalid WireGuard config: $CONF (see $LOG)"
+    return 1
+  fi
 
-  # reload live (solo se esiste)
+  # reload live solo se esiste
   if wg show "$IFACE" >/dev/null 2>&1; then
-    tmp="$(mktemp 2>/dev/null || true)"
+    tmp="$(mktemp 2>/dev/null)" || true
     if [ -n "$tmp" ] && wg-quick strip "$IFACE" >"$tmp" 2>>"$LOG"; then
       wg syncconf "$IFACE" "$tmp" >>"$LOG" 2>&1 || true
     fi
     [ -n "$tmp" ] && rm -f "$tmp" >/dev/null 2>&1 || true
   fi
 
-  # restart interfaccia (qui NON sopprimiamo l'errore: lo logghiamo)
   wg-quick down "$CONF" >>"$LOG" 2>&1 || true
   wg-quick up   "$CONF" >>"$LOG" 2>&1 || true
 
-  # restart servizio
   rc-service "wg-quick.${IFACE}" stop  >>"$LOG" 2>&1 || true
   rc-service "wg-quick.${IFACE}" zap  >>"$LOG" 2>&1 || true
   rc-service "wg-quick.${IFACE}" start >>"$LOG" 2>&1 || true
 
-  if wg show "$IFACE" >/dev/null 2>&1; then
-    info "OK: ${IFACE} is up"
-    return 0
-  fi
+  wg show "$IFACE" >/dev/null 2>&1 && { info "OK: ${IFACE} is up"; return 0; }
 
-  info "WARN: ${IFACE} not present. Last log lines:"
-  tail -n 60 "$LOG" 2>/dev/null || true
+  info "WARN: ${IFACE} not present after restart. Check: $LOG"
   return 1
 }
 
