@@ -30,8 +30,10 @@ reload_and_start_wg_interface() {
   [ -z "$INTERFACE" ] && INTERFACE="wg0"
   info "Restarting WireGuard interface $INTERFACE..."
   wg syncconf $INTERFACE <(wg-quick strip $INTERFACE)
-  #wg-quick down "$INTERFACE" >/dev/null 2>&1 || true
-  #wg-quick up "$INTERFACE" >/dev/null 2>&1 || die "Failed to bring up interface $INTERFACE"
+  rc-service wg-quick.$INTERFACE stop >/dev/null 2>&1 || true
+  rc-service wg-quick.$INTERFACE zap >/dev/null 2>&1 || true
+  wg-quick up /etc/wireguard/$INTERFACE.conf >/dev/null 2>&1 || true
+  rc-service wg-quick.$INTERFACE start >/dev/null 2>&1 || true
 }
 
 # --- Function to read an existing value from wg0.conf ---
