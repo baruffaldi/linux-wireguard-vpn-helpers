@@ -117,7 +117,7 @@ modify_client() {
     info "Regenerating configuration file..."
 
     rm -f "${CLIENTS_DIR}/client${N}_${NAME}"_* 2>/dev/null || true
-    sed -i "/# client${N}_${NAME}/,/^$/d" "$WG_CONF_PATH" 2>/dev/null || true
+    wg_conf_remove_peer_by_name "$WG_CONF_PATH" "client${N}_${NAME}"
     make_client_config "$N" "$NAME" "$NEW_IP" "$SERVER_PUBKEY" "$SERVER_ENDPOINT" "$SERVER_PORT" "$NEW_DNS" "$NEW_OFFICE"
 
     reload_and_start_wg_interface "$INTERFACE"
@@ -151,7 +151,7 @@ delete_client() {
         rm -f "${CLIENTS_DIR}/client${N}_${NAME}"_* 2>/dev/null || true
 
         info "Removing block from ${WG_CONF} file..."
-        sed -i "/# client${N}_${NAME}/,/^$/d" "$WG_CONF_PATH" 2>/dev/null || true
+        wg_conf_remove_peer_by_name "$WG_CONF_PATH" "client${N}_${NAME}"
         reload_and_start_wg_interface "$INTERFACE"
 
         success "Client client${N}_${NAME} removed successfully."

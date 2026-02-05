@@ -219,8 +219,8 @@ PostUp = iptables -A FORWARD -o wg0 -j ACCEPT
 
 PostDown = sysctl -w net.ipv4.ip_forward=0
 PostDown = iptables -t nat -D POSTROUTING -s ${SUBNET_VPN} -j MASQUERADE
-PostDown = iptables -A FORWARD -i wg0 -j ACCEPT
-PostDown = iptables -A FORWARD -o wg0 -j ACCEPT
+PostDown = iptables -D FORWARD -i wg0 -j ACCEPT
+PostDown = iptables -D FORWARD -o wg0 -j ACCEPT
 
 # --- Endpoint Info ---
 # Endpoint: ${ENDPOINT}:${PORT}

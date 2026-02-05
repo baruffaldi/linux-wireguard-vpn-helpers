@@ -79,6 +79,62 @@ get_conf_value() {
   fi
 }
 
+wg_conf_remove_peer_by_name() {
+  conf="${1:?conf path required}"
+  name="${2:?peer name required}"   # es: client2_noc
+
+  # sicurezza permessi per i nuovi file
+  umask 077
+
+  [ -f "$conf" ] || { echo "ERROR: conf not found: $conf" >&2; return 1; }
+
+  ts="$(date +%Y%m%d-%H%M%S)"
+  bak="${conf}.bak.${ts}"
+  tmp="$(mktemp "${conf}.tmp.XXXXXX")" || return 1
+
+  # backup (mantiene permessi/owner se possibile)
+  cp -p "$conf" "$bak" || { rm -f "$tmp"; return 1; }
+
+  # elimina il blocco [Peer] che contiene la riga commento "# name"
+  # logica:
+  # - quando vede "[Peer]" apre un blocco candidato
+  # - se dentro quel blocco trova "# name" lo marca da eliminare
+  # - quando arriva al successivo "[Peer]" o EOF, decide se stampare o scartare
+  awk -v target="$name" '
+    function flush_block() {
+      if (inpeer) {
+        if (!drop) printf "%s", buf;
+        buf=""; inpeer=0; drop=0;
+      }
+    }
+    BEGIN { inpeer=0; drop=0; buf=""; }
+    /^\[Peer\][[:space:]]*$/ {
+      flush_block();
+      inpeer=1;
+      buf = $0 "\n";
+      next;
+    }
+    {
+      if (inpeer) {
+        buf = buf $0 "\n";
+        if ($0 ~ "^[[:space:]]*#[[:space:]]*" target "[[:space:]]*$") drop=1;
+        next;
+      }
+      print;
+    }
+    END { flush_block(); }
+  ' "$conf" >"$tmp" || { rm -f "$tmp"; return 1; }
+
+  # sostituzione atomica + permessi stretti
+  chmod 600 "$tmp" 2>/dev/null || true
+  chown root:root "$tmp" 2>/dev/null || true
+  mv -f "$tmp" "$conf" || { rm -f "$tmp"; return 1; }
+  chmod 600 "$conf" 2>/dev/null || true
+  chown root:root "$conf" 2>/dev/null || true
+
+  return 0
+}
+
 conf_get() {
   key="$1"
   if [ -f "$WG_CONF_PATH" ]; then
