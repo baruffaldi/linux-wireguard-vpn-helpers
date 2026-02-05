@@ -33,6 +33,8 @@ update_system() {
       git clone --depth 1 https://github.com/baruffaldi/linux-wireguard-vpn-helpers "$WG_HELPERS_DIR"
     fi
     success "Repository ready."
+    info "Closing setup to apply updates... please re-run setup-vpn after this."
+    exit 0
   else
     warning "git not installed; skipping repo update."
   fi
