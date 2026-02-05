@@ -102,8 +102,9 @@ while true; do
     info " [2] Modify client"
     info " [3] Delete client"
     info " [4] Start microserver (only .conf)"
-    info " [5] Regenerate configuration file (.conf) for a client"
-    info " [6] Test VPN configuration"
+    info " [5] View client configuration file (.conf)"
+    info " [6] Regenerate configuration file (.conf) for a client"
+    info " [7] Test VPN configuration"
     info " [Q] Quit"
     info "==============================================="
   fi
@@ -118,8 +119,9 @@ while true; do
     2) modify_client ;;
     3) delete_client ;;
     4) start_microserver ;;
-    5) regenerate_config ;;
-    6) test_vpn_configuration ;;
+    5) view_config ;;
+    6) regenerate_config ;;
+    7) test_vpn_configuration ;;
     q|Q) success "Exiting."; break ;;
     *) warning "Invalid choice." ;;
   esac

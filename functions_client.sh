@@ -287,6 +287,23 @@ start_microserver() {
     rm -f "$STOP"
 }
 
+view_config() {
+    header "[5] View client configuration"
+    ask N "Enter client number to view" ""
+    NAME=$(ls "${CLIENTS_DIR}/client${N}_"*_config.conf 2>/dev/null | head -n1 | sed 's/.*client[0-9]\+_\([^_]\+\)_config\.conf/\1/')
+    [ -n "$NAME" ] || { warning "Client not found."; continue; }
+    CFG="${CLIENTS_DIR}/client${N}_${NAME}_config.conf"
+    if [ -f "$CFG" ]; then
+        info ""
+        info "=== Configuration for client${N}_${NAME} ==="
+        info ""
+        cat "$CFG"
+        info ""
+    else
+        warning "Configuration file not found for client${N}_${NAME}."
+    fi
+}
+
 regenerate_config() {
     header "[5] Regenerate client configurations"
     ask N "Enter client number to regenerate" ""
