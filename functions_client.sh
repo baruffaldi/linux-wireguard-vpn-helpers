@@ -25,7 +25,7 @@ add_client() {
     generate_client_keys "$NUM" "$NAME"
     make_client_config "$NUM" "$NAME" "$IP" "$SERVER_PUBKEY" "$SERVER_ENDPOINT" "$SERVER_PORT" "$SERVER_DNS" "$OFFICE"
     server_append_peer "client${NUM}_${NAME}" "$(cat "${CLIENTS_DIR}/client${NUM}_${NAME}_public.key")" "${IP}"
-    reload_and_start_wg_interface "$WG_INTERFACE"
+    reload_and_start_wg_interface "$INTERFACE"
     success "Created client${NUM}_${NAME}"
 }
 
@@ -118,7 +118,7 @@ modify_client() {
     info "Regenerating configuration file..."
     make_client_config "$N" "$NAME" "$NEW_IP" "$SERVER_PUBKEY" "$SERVER_ENDPOINT" "$SERVER_PORT" "$NEW_DNS" "$NEW_OFFICE"
 
-    reload_and_start_wg_interface "$WG_INTERFACE"
+    reload_and_start_wg_interface "$INTERFACE"
     info ""
     success "Client updated successfully:"
     info " Name      : client${N}_${NAME}"
@@ -149,7 +149,7 @@ delete_client() {
 
         info "Removing block from ${WG_CONF} file..."
         sed -i "/# client${N}_${NAME}/,/^$/d" "$WG_CONF_PATH" 2>/dev/null || true
-        reload_and_start_wg_interface "$WG_INTERFACE"
+        reload_and_start_wg_interface "$INTERFACE"
 
         success "Client client${N}_${NAME} removed successfully."
     else
@@ -297,7 +297,7 @@ regenerate_config() {
     IP=$(awk '/Address/{print $3}' "$CFG" | cut -d/ -f1)
     ask OFFICE "Office subnet (e.g. 192.168.10.0/24 or multiple, comma-separated)" ""
     make_client_config "$N" "$NAME" "$IP" "$SERVER_PUBKEY" "$SERVER_ENDPOINT" "$SERVER_PORT" "$SERVER_DNS" "$OFFICE"
-    reload_and_start_wg_interface "$WG_INTERFACE"
+    reload_and_start_wg_interface "$INTERFACE"
     success "Regenerated configuration file for client${N}_${NAME}"
 }
 
