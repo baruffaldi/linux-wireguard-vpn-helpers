@@ -161,7 +161,7 @@ else
   success "DNS for clients    = (none)"
 fi
 success "Client isolation         = ${CLIENTS_ISOLATION}"
-success "Client authorized subnet = ${CLIENTS_SUBNET_VPN}"
+success "Client authorized VPN subnet = ${CLIENTS_SUBNET_VPN}"
 info ""
 
 # --- Generate keys if missing ---
@@ -269,9 +269,10 @@ info " Client range: $VPN_RANGE_CLIENTS"
 info " Port        : $PORT"
 info " Endpoint    : $ENDPOINT"
 info " Max clients : $NUM_CLIENTS"
-info " Client isolation : $CLIENTS_ISOLATION"
-info " Client authorized subnet : $CLIENTS_SUBNET_VPN"
 info " Client DNS  : ${DNS:-(none)}"
+info ""
+info " Client isolation: $CLIENTS_ISOLATION"
+info " Client authorized VPN subnet: $CLIENTS_SUBNET_VPN"
 info ""
 
 # --- Start the interface ---
