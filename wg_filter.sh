@@ -28,12 +28,12 @@ fi
 . "$CONFIG_FILE"
 
 # Verify that fundamental variables are defined
-: "${WGPORT:?Config WGPORT missing}"
-: "${WAN_IF:?Config WAN_IF missing}"
-: "${HOSTS:?Config HOSTS missing}"
-: "${IPTABLES:?Config IPTABLES missing}"
-: "${CHAIN:?Config CHAIN missing}"
-: "${EXTRA_URL:?Config EXTRA_URL missing}"
+: "${WGPORT?Config WGPORT missing}"
+: "${WAN_IF?Config WAN_IF missing}"
+: "${HOSTS?Config HOSTS missing}"
+: "${IPTABLES?Config IPTABLES missing}"
+: "${CHAIN?Config CHAIN missing}"
+: "${EXTRA_URL?Config EXTRA_URL missing}"
 
 # ================================================
 
