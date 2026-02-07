@@ -142,6 +142,10 @@ ask_config EXTRA_URL "Enter URL of the extra IP/CIDR list"              "${EXTRA
 ask_config IPTABLES "Path to iptables binary"                       "$IPTABLES_DEFAULT"              "$IPTABLES_PREV"
 ask_config CHAIN    "Name of the dedicated chain for WireGuard"      "${CHAIN_PREV:-WG_FILTER}"       "$CHAIN_PREV"
 
+if [ "$EXTRA_URL" = "https://example.com/acl.txt" ]; then
+  EXTRA_URL=""
+fi
+
 # --- Write file ---
 echo
 info "Writing configuration to $CONFIG_FILE ..."
