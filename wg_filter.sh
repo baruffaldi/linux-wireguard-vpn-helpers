@@ -18,7 +18,7 @@ else
 fi
 
 # ================== LOAD CONFIG ==================
-CONFIG_FILE="./wg_filter.conf"
+CONFIG_FILE="${SCRIPT_PATH}/wg_filter.conf"
 
 if [ ! -f "$CONFIG_FILE" ]; then
   error "Configuration file not found: $CONFIG_FILE"
@@ -33,6 +33,7 @@ fi
 : "${HOSTS:?Config HOSTS missing}"
 : "${IPTABLES:?Config IPTABLES missing}"
 : "${CHAIN:?Config CHAIN missing}"
+: "${EXTRA_URL:?Config EXTRA_URL missing}"
 
 # ================================================
 
