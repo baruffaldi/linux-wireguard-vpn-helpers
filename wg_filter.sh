@@ -124,6 +124,9 @@ fi
 DESIRED_SET="$(normalize_list_lines "$ALLOW_LIST")"
 CURRENT_SET="$(get_current_chain_sources || true)"
 
+echo $DESIRED_SET
+echo $CURRENT_SET
+
 if [ -n "$CURRENT_SET" ] && [ "$DESIRED_SET" = "$CURRENT_SET" ]; then
   success "No changes: $CHAIN already matches allow-list. Nothing to do."
   exit 0
