@@ -111,7 +111,22 @@ expand_ipv4_or_cidr() {
 # --- 1) Resolve A-records of your DDNS HOSTS ---
 RESOLVED_IPS=""
 for H in $HOSTS; do
-  IPS="$(dig +short A "$H" 2>/dev/null | tr -d '\r' || true)"
+  # Se H è già un IP o CIDR, aggiungilo direttamente
+  if is_ipv4_or_cidr "$H"; then
+    RESOLVED_IPS="$RESOLVED_IPS $H"
+    continue
+  fi
+
+  # Altrimenti trattalo come hostname e risolvi via primary NS (SOA)
+  NS="$(dig +short SOA "$H" 2>/dev/null | awk '{print $1}' | sed 's/\.$//')"
+
+  if [ -n "$NS" ]; then
+    IPS="$(dig +time=2 +tries=1 +short @"$NS" A "$H" 2>/dev/null | tr -d '\r' || true)"
+  else
+    # fallback: resolver normale
+    IPS="$(dig +time=2 +tries=1 +short A "$H" 2>/dev/null | tr -d '\r' || true)"
+  fi
+
   for ip in $IPS; do
     if is_ipv4_or_cidr "$ip"; then
       RESOLVED_IPS="$RESOLVED_IPS $ip"
@@ -193,8 +208,8 @@ CURRENT_RAW="$(get_current_chain_sources || true)"
 CURRENT_SET="$(normalize_list_lines "$CURRENT_RAW")"
 
 # Debug
-printf 'DESIRED_SET=[%s]\n' "$DESIRED_SET"
-printf 'CURRENT_SET=[%s]\n' "$CURRENT_SET"
+# printf 'DESIRED_SET=[%s]\n' "$DESIRED_SET"
+# printf 'CURRENT_SET=[%s]\n' "$CURRENT_SET"
 
 if [ -n "$CURRENT_SET" ] && [ "$DESIRED_SET" = "$CURRENT_SET" ]; then
   success "No changes: $CHAIN already matches allow-list. Nothing to do."
