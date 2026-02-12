@@ -91,10 +91,13 @@ fi
 
 # --- Helper: normalize a space-separated list into sorted unique lines ---
 normalize_list_lines() {
-  # stdin or args -> one per line, sorted unique
-  # usage: normalize_list_lines "$LIST"
-  printf '%s\n' "$1" | xargs -n1 2>/dev/null | sed '/^$/d' | sort -u
+  printf '%s\n' "$1" \
+    | xargs -n1 2>/dev/null \
+    | sed 's#/32$##' \
+    | sed '/^$/d' \
+    | sort -u
 }
+
 
 # --- Helper: read current ACCEPT sources from a chain (one per line, sorted unique) ---
 get_current_chain_sources() {
@@ -123,9 +126,6 @@ fi
 # Compute "desired" and "current" sets and compare BEFORE changing anything
 DESIRED_SET="$(normalize_list_lines "$ALLOW_LIST")"
 CURRENT_SET="$(get_current_chain_sources || true)"
-
-echo $DESIRED_SET
-echo $CURRENT_SET
 
 if [ -n "$CURRENT_SET" ] && [ "$DESIRED_SET" = "$CURRENT_SET" ]; then
   success "No changes: $CHAIN already matches allow-list. Nothing to do."
