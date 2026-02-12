@@ -89,6 +89,46 @@ if [ -z "$ALLOW_LIST" ]; then
   exit 0
 fi
 
+# --- Helper: normalize a space-separated list into sorted unique lines ---
+normalize_list_lines() {
+  # stdin or args -> one per line, sorted unique
+  # usage: normalize_list_lines "$LIST"
+  printf '%s\n' "$1" | xargs -n1 2>/dev/null | sed '/^$/d' | sort -u
+}
+
+# --- Helper: read current ACCEPT sources from a chain (one per line, sorted unique) ---
+get_current_chain_sources() {
+  # Extract only "-s X ... -j ACCEPT" rules from CHAIN; return X values
+  # Output: one per line
+  $IPTABLES -S "$CHAIN" 2>/dev/null \
+    | awk '
+        $1 == "-A" && $2 == "'"$CHAIN"'" {
+          src=""
+          j=""
+          for (i=3; i<=NF; i++) {
+            if ($i == "-s" && (i+1) <= NF) src=$(i+1)
+            if ($i == "-j" && (i+1) <= NF) j=$(i+1)
+          }
+          if (j == "ACCEPT" && src != "") print src
+        }
+      ' \
+    | sort -u
+}
+
+# --- 4) Prepare the dedicated chain and the hook from INPUT ---
+if ! $IPTABLES -nL "$CHAIN" >/dev/null 2>&1; then
+  $IPTABLES -N "$CHAIN"
+fi
+
+# Compute "desired" and "current" sets and compare BEFORE changing anything
+DESIRED_SET="$(normalize_list_lines "$ALLOW_LIST")"
+CURRENT_SET="$(get_current_chain_sources || true)"
+
+if [ -n "$CURRENT_SET" ] && [ "$DESIRED_SET" = "$CURRENT_SET" ]; then
+  success "No changes: $CHAIN already matches allow-list. Nothing to do."
+  exit 0
+fi
+
 # --- 4) Prepare the dedicated chain and the hook from INPUT ---
 if ! $IPTABLES -nL "$CHAIN" >/dev/null 2>&1; then
   $IPTABLES -N "$CHAIN"
