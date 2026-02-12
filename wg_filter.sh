@@ -46,11 +46,14 @@ is_ipv4_or_cidr() {
 : "${MAX_EXPAND:=4096}"
 
 ip_to_int() {
-  # IPv4 -> int
-  IFS=. set -- $1
-  [ $# -eq 4 ] || return 1
-  echo $(( ($1<<24) + ($2<<16) + ($3<<8) + $4 ))
+  # IPv4 -> int (NO set --, non tocca $1..$n dello script)
+  IFS=. read -r o1 o2 o3 o4 <<EOF
+$1
+EOF
+  [ -n "${o1:-}" ] && [ -n "${o2:-}" ] && [ -n "${o3:-}" ] && [ -n "${o4:-}" ] || return 1
+  echo $(( (o1<<24) + (o2<<16) + (o3<<8) + o4 ))
 }
+
 
 int_to_ip() {
   # int -> IPv4
@@ -165,7 +168,6 @@ normalize_list_lines() {
     | sort -u
 }
 
-
 # --- Helper: read current ACCEPT sources from a chain (one per line, sorted unique) ---
 get_current_chain_sources() {
   # Extract only "-s X ... -j ACCEPT" rules from CHAIN; return X values
@@ -185,21 +187,14 @@ get_current_chain_sources() {
     | sort -u
 }
 
-# --- 4) Prepare the dedicated chain and the hook from INPUT ---
-if ! $IPTABLES -nL "$CHAIN" >/dev/null 2>&1; then
-  $IPTABLES -N "$CHAIN"
-fi
-
 # Compute "desired" and "current" sets and compare BEFORE changing anything
 DESIRED_SET="$(normalize_list_lines "$ALLOW_LIST")"
 CURRENT_RAW="$(get_current_chain_sources || true)"
-
-# Espandi anche il CURRENT (che contiene CIDR)
 CURRENT_SET="$(normalize_list_lines "$CURRENT_RAW")"
 
-# Debug (se vuoi)
-# echo "$DESIRED_SET"
-# echo "$CURRENT_SET"
+# Debug
+printf 'DESIRED_SET=[%s]\n' "$DESIRED_SET"
+printf 'CURRENT_SET=[%s]\n' "$CURRENT_SET"
 
 if [ -n "$CURRENT_SET" ] && [ "$DESIRED_SET" = "$CURRENT_SET" ]; then
   success "No changes: $CHAIN already matches allow-list. Nothing to do."
