@@ -42,6 +42,69 @@ is_ipv4_or_cidr() {
   echo "$1" | grep -Eq '^[0-9]{1,3}(\.[0-9]{1,3}){3}(/([0-9]|[12][0-9]|3[0-2]))?$'
 }
 
+# Max IPs to expand from a CIDR (safety). You can set it in wg_filter.conf
+: "${MAX_EXPAND:=4096}"
+
+ip_to_int() {
+  # IPv4 -> int
+  IFS=. set -- $1
+  [ $# -eq 4 ] || return 1
+  echo $(( ($1<<24) + ($2<<16) + ($3<<8) + $4 ))
+}
+
+int_to_ip() {
+  # int -> IPv4
+  n="$1"
+  echo "$(( (n>>24) & 255 )).$(( (n>>16) & 255 )).$(( (n>>8) & 255 )).$(( n & 255 ))"
+}
+
+expand_ipv4_or_cidr() {
+  # Prints one IPv4 per line (expands CIDR to all IPs)
+  # Input: "x.x.x.x" or "x.x.x.x/NN"
+  in="$1"
+
+  case "$in" in
+    */*)
+      ip="${in%/*}"
+      pfx="${in#*/}"
+      ;;
+    *)
+      ip="$in"
+      pfx="32"
+      ;;
+  esac
+
+  # Basic sanity
+  echo "$ip" | grep -Eq '^[0-9]{1,3}(\.[0-9]{1,3}){3}$' || return 1
+  echo "$pfx" | grep -Eq '^(3[0-2]|[12]?[0-9])$' || return 1
+
+  ip_i="$(ip_to_int "$ip")" || return 1
+
+  hostbits=$(( 32 - pfx ))
+  # number of addresses in subnet
+  count=$(( 1 << hostbits ))
+
+  # Safety guard
+  if [ "$count" -gt "$MAX_EXPAND" ]; then
+    error "CIDR too large to expand ($in => $count IPs). Increase MAX_EXPAND if you really want."
+  fi
+
+  # mask = (0xFFFFFFFF << hostbits) & 0xFFFFFFFF
+  # (we avoid hex and do it with arithmetic)
+  if [ "$pfx" -eq 0 ]; then
+    net=0
+  else
+    mask=$(( ( (1<<32) - 1 ) ^ ( (1<<hostbits) - 1 ) ))
+    net=$(( ip_i & mask ))
+  fi
+
+  i=0
+  while [ "$i" -lt "$count" ]; do
+    int_to_ip $(( net + i ))
+    i=$(( i + 1 ))
+  done
+}
+
 # --- 1) Resolve A-records of your DDNS HOSTS ---
 RESOLVED_IPS=""
 for H in $HOSTS; do
@@ -91,10 +154,14 @@ fi
 
 # --- Helper: normalize a space-separated list into sorted unique lines ---
 normalize_list_lines() {
+  # Takes a space-separated list and outputs expanded IPs, one per line, sorted unique
+  # usage: normalize_list_lines "$LIST"
   printf '%s\n' "$1" \
     | xargs -n1 2>/dev/null \
-    | sed 's#/32$##' \
     | sed '/^$/d' \
+    | while IFS= read -r item; do
+        expand_ipv4_or_cidr "$item"
+      done \
     | sort -u
 }
 
@@ -125,7 +192,14 @@ fi
 
 # Compute "desired" and "current" sets and compare BEFORE changing anything
 DESIRED_SET="$(normalize_list_lines "$ALLOW_LIST")"
-CURRENT_SET="$(get_current_chain_sources || true)"
+CURRENT_RAW="$(get_current_chain_sources || true)"
+
+# Espandi anche il CURRENT (che contiene CIDR)
+CURRENT_SET="$(normalize_list_lines "$CURRENT_RAW")"
+
+# Debug (se vuoi)
+# echo "$DESIRED_SET"
+# echo "$CURRENT_SET"
 
 if [ -n "$CURRENT_SET" ] && [ "$DESIRED_SET" = "$CURRENT_SET" ]; then
   success "No changes: $CHAIN already matches allow-list. Nothing to do."
