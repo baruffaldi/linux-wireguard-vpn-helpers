@@ -208,29 +208,63 @@ enable_disable_ddclient() {
 }
 
 enable_ddclient() {
-  if systemctl is-active --quiet "$SERVICE"; then
-    info "ddclient è attualmente ATTIVO."
-    return
+  # --- Stato attuale (manager-aware) ---
+  if have_cmd rc-service; then
+    # OpenRC: 0 = started
+    if rc-service ddclient status >/dev/null 2>&1; then
+      info "ddclient è attualmente ATTIVO."
+      return
+    else
+      info "ddclient è attualmente FERMO."
+    fi
+
+  elif have_cmd systemctl; then
+    # systemd
+    if systemctl is-active --quiet ddclient; then
+      info "ddclient è attualmente ATTIVO."
+      return
+    else
+      info "ddclient è attualmente FERMO."
+    fi
+
+  elif have_cmd service; then
+    # SysV: molte distro usano exit code 0 se running
+    if service ddclient status >/dev/null 2>&1; then
+      info "ddclient è attualmente ATTIVO."
+      return
+    else
+      info "ddclient è attualmente FERMO."
+    fi
+
+  else
+    # Fallback: processo in esecuzione
+    if have_cmd pgrep && pgrep -f '[d]dclient' >/dev/null 2>&1; then
+      info "ddclient è attualmente ATTIVO."
+      return
+    else
+      info "ddclient è attualmente FERMO."
+    fi
   fi
 
-  info "ddclient è attualmente FERMO."
   info "Abilitazione ed avvio del servizio..."
+
+  # --- Avvio/enable (come già avevi) ---
   if have_cmd rc-service; then
-    # Alpine OpenRC
     rc-update add ddclient default >/dev/null 2>&1 || true
     rc-service ddclient restart >/dev/null 2>&1 && success "ddclient restarted (OpenRC)."
+
   elif have_cmd systemctl; then
-    # systemd-based systems
     systemctl enable ddclient >/dev/null 2>&1 || true
     if systemctl is-active --quiet ddclient; then
       systemctl restart ddclient && success "ddclient restarted (systemd)."
     else
       systemctl start ddclient && success "ddclient started (systemd)."
     fi
+
   elif have_cmd service; then
-    # sysvinit fallback
     service ddclient restart >/dev/null 2>&1 || service ddclient start >/dev/null 2>&1
     success "ddclient started (SysVinit)."
+
   else
     warning "No service manager detected. Running ddclient in background..."
     nohup ddclient -daemon=300 >/dev/null 2>&1 &
