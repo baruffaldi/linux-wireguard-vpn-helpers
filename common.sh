@@ -67,26 +67,53 @@ header() {
 # Stores the answer in the variable specified by the first argument.
 # Usage: ask VAR_NAME "Enter your name" "DefaultName"
 ask() {
-  local __var="$1"
-  local prompt="$2"
-  local def="${3-}"
-  local prev="${4-}"
-  local ans
+  var="$1"
+  prompt="$2"
+  def="${3-}"
+  prev_val="${4-}"
 
-  printf "%b %b %s" "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt"
+  # strip quote esterne (") se presenti
+  def=$(printf '%s' "$def" | sed 's/^"//;s/"$//')
+  prev_val=$(printf '%s' "$prev_val" | sed 's/^"//;s/"$//')
 
-  [[ -n "$def" ]] && printf " [%s]" "$def"
-  [[ -n "$prev" ]] && printf " (previous: %s)" "$prev"
+  # stampa prompt
+  if [ -n "$def" ]; then
+    if [ -n "$prev_val" ]; then
+      printf "%s %s %s [%s] (previous: %s): " \
+        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt" "$def" "$prev_val"
+    else
+      printf "%s %s %s [%s]: " \
+        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt" "$def"
+    fi
+  else
+    if [ -n "$prev_val" ]; then
+      printf "%s %s %s (previous: %s): " \
+        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt" "$prev_val"
+    else
+      printf "%s %s %s: " \
+        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt"
+    fi
+  fi
 
-  printf ": "
+  # input (read POSIX)
+  IFS= read ans || ans=""
 
-  IFS= read -r ans || true
-  [[ -z "$ans" ]] && ans="$def"
+  # se l'utente incolla "valore"
+  ans=$(printf '%s' "$ans" | sed 's/^"//;s/"$//')
 
-  printf -v "$__var" '%s' "$ans"
+  # scegli valore finale
+  if [ -n "$ans" ]; then
+    val="$ans"
+  else
+    val="$def"
+  fi
+
+  # escape sicuro per eval (backslash e doppi apici)
+  val_esc=$(printf '%s' "$val" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
+  # assegna alla variabile richiesta
+  eval "$var=\"$val_esc\""
 }
-
-
 
 # ask_secret "VARNAME" "Question"
 ask_secret() {
