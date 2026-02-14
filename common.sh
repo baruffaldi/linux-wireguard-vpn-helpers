@@ -79,7 +79,11 @@ ask() {
             printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s [%s]: " "$prompt" "$def"
         fi
     else
+        if [ -n "$prev_val" ]; then
+            printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s (previous: %s): " "$prompt" "$prev_val"
+        else
         printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s: " "$prompt"
+        fi
     fi
 
     read ans || true
