@@ -70,43 +70,22 @@ ask() {
   local __var="$1"
   local prompt="$2"
   local def="${3-}"
-  local prev_val="${4-}"
+  local prev="${4-}"
   local ans
 
-  # Sanitize: rimuovi solo eventuali virgolette esterne
-  def="${def%\"}"; def="${def#\"}"
-  prev_val="${prev_val%\"}"; prev_val="${prev_val#\"}"
+  printf "%b %b %s" "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt"
 
-  # Prompt
-  if [[ -n "$def" ]]; then
-    if [[ -n "$prev_val" ]]; then
-      printf "%b %b %s [%s] (previous: %s): " \
-        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt" "$def" "$prev_val"
-    else
-      printf "%b %b %s [%s]: " \
-        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt" "$def"
-    fi
-  else
-    if [[ -n "$prev_val" ]]; then
-      printf "%b %b %s (previous: %s): " \
-        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt" "$prev_val"
-    else
-      printf "%b %b %s: " \
-        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt"
-    fi
-  fi
+  [[ -n "$def" ]] && printf " [%s]" "$def"
+  [[ -n "$prev" ]] && printf " (previous: %s)" "$prev"
 
-  # Input
+  printf ": "
+
   IFS= read -r ans || true
-  ans="${ans%\"}"; ans="${ans#\"}"   # se l'utente incolla "valore"
+  [[ -z "$ans" ]] && ans="$def"
 
-  # Set variabile target (senza eval)
-  if [[ -n "$ans" ]]; then
-    printf -v "$__var" '%s' "$ans"
-  else
-    printf -v "$__var" '%s' "$def"
-  fi
+  printf -v "$__var" '%s' "$ans"
 }
+
 
 
 # ask_secret "VARNAME" "Question"
