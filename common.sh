@@ -67,13 +67,13 @@ header() {
 # Stores the answer in the variable specified by the first argument.
 # Usage: ask VAR_NAME "Enter your name" "DefaultName"
 ask() {
-    local var="$1"
+    local __var="$1"
     local prompt="$2"
     local def="${3-}"
     local prev_val="${4-}"
     local ans
 
-    # strip quote esterne (") se presenti
+    # strip quote esterne
     def="${def%\"}"; def="${def#\"}"
     prev_val="${prev_val%\"}"; prev_val="${prev_val#\"}"
 
@@ -93,13 +93,15 @@ ask() {
 
     read -r ans || true
 
-    if [ -n "${ans:-}" ]; then
-        printf -v "$var" '%s' "$ans"
+    # se vuoi ripulire anche input utente:
+    ans="${ans%\"}"; ans="${ans#\"}"
+
+    if [ -n "$ans" ]; then
+        printf -v "$__var" '%s' "$ans"
     else
-        printf -v "$var" '%s' "$def"
+        printf -v "$__var" '%s' "$def"
     fi
 }
-
 
 # ask_secret "VARNAME" "Question"
 ask_secret() {
