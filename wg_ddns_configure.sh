@@ -31,6 +31,7 @@ fi
 
 header "WireGuard DDNS Configurator"
 
+WG_CONF_PATH=""
 WG_DIR="/etc/wireguard"
 WG_DDNS="wg_ddns.sh"
 WG_DDNS_CONF="wg_ddns.conf"
