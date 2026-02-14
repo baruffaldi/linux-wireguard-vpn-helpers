@@ -190,6 +190,38 @@ EOF
   success "OVHClient setup complete."
 }
 
+ddclient_is_running() {
+  SERVICE="ddclient"
+
+  # OpenRC
+  if command -v rc-service >/dev/null 2>&1; then
+    rc-service "$SERVICE" status >/dev/null 2>&1
+    return $?
+  fi
+
+  # systemd
+  if command -v systemctl >/dev/null 2>&1; then
+    systemctl is-active --quiet "$SERVICE"
+    return $?
+  fi
+
+  # SysVinit
+  if command -v service >/dev/null 2>&1; then
+    service "$SERVICE" status >/dev/null 2>&1
+    return $?
+  fi
+
+  # Fallback: controllo processo
+  if command -v pgrep >/dev/null 2>&1; then
+    pgrep -f '[d]dclient' >/dev/null 2>&1
+    return $?
+  fi
+
+  # Ultimo fallback: ps
+  ps aux 2>/dev/null | grep '[d]dclient' >/dev/null 2>&1
+  return $?
+}
+
 enable_disable_ddclient() {
     header "DDClient Enable/Disable"
 
