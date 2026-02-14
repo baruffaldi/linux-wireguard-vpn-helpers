@@ -41,7 +41,7 @@ CRON_DEFAULT="/etc/crontabs/root"
 
 # --- Determine the absolute path of the script ---
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CRON_LINE="*/5       *       *       *       *       ${WG_DDNS_PATH} >/dev/null 2>&1"
+CRON_LINE="*/5    *   *   *   *   ${WG_DDNS_PATH} >/dev/null 2>&1"
 
 info ""
 info "Configuration file: $WG_DDNS_CONF_PATH"

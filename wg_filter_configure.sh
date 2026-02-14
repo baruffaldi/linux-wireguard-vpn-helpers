@@ -37,6 +37,7 @@ WG_FILTER_CONF_PATH="${SCRIPT_PATH}/${WG_FILTER_CONF}"
 WG_FILTER_PATH="${SCRIPT_PATH}/wg_filter.sh"
 WG_EXAMPLE_FILTER_CONF_PATH="${SCRIPT_PATH}/wg_filter.conf.example"
 CRON_DEFAULT="/etc/crontabs/root"
+CRON_LINE="*/5    *   *   *   *   ${WG_FILTER_PATH} >/dev/null 2>&1"
 
 # --- Determine the absolute path of the script ---
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

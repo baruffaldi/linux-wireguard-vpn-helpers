@@ -174,7 +174,7 @@ enable_disable_filter() {
         info "Firewall attualmente DISATTIVO"
 
         # Aggiunge wg_filter.sh al crontab (ogni minuto)
-        (crontab -l 2>/dev/null; echo "* * * * * $WG_FILTER_PATH") | crontab -
+        (crontab -l 2>/dev/null; echo "$CRON_LINE") | crontab -
 
         # Esegue subito lo script
         "$WG_FILTER_PATH"
