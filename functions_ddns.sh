@@ -354,12 +354,6 @@ disable_ovhclient() {
 }
 
 detect_ddclient_conf() {
-  # Se già definito e file esiste → usa quello
-  if [ -n "$DDCLIENT_CONF_PATH" ] && [ -f "$DDCLIENT_CONF_PATH" ]; then
-    printf '%s\n' "$DDCLIENT_CONF_PATH"
-    return 0
-  fi
-
   # Path comuni
   for path in \
     /etc/ddclient.conf \
