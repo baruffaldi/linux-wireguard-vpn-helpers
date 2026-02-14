@@ -63,6 +63,7 @@ fi
 
 while true; do
 
+  info ""
   info "Firewall status:"
   if crontab -l 2>/dev/null | grep -q "wg_filter.sh"; then
       printf "${C_GREEN} *${C_RESET} status: started\n"

@@ -152,12 +152,12 @@ enable_disable_filter() {
     header "Firewall Enable/Disable"
 
     # Controlla se è presente nel crontab
-    if crontab -l 2>/dev/null | grep -qE '(^|[[:space:]])wg_filter\.sh([[:space:]]|$)'; then
+    if crontab -l 2>/dev/null | grep -q "${WG_FILTER_PATH}"; then
         
         info "Firewall attualmente ATTIVO"
 
         # Rimuove wg_filter.sh dal crontab
-        crontab -l 2>/dev/null | grep -v "wg_filter.sh" | crontab -
+        crontab -l 2>/dev/null | grep -v "${WG_FILTER_PATH}" | crontab -
 
         # Flush completo iptables
         iptables -F
@@ -173,8 +173,8 @@ enable_disable_filter() {
         
         info "Firewall attualmente DISATTIVO"
 
-        # Aggiunge wg_filter.sh al crontab (ogni 5 minuti esempio)
-        (crontab -l 2>/dev/null; echo "*/5 * * * * $WG_FILTER_PATH") | crontab -
+        # Aggiunge wg_filter.sh al crontab (ogni minuto)
+        (crontab -l 2>/dev/null; echo "* * * * * $WG_FILTER_PATH") | crontab -
 
         # Esegue subito lo script
         "$WG_FILTER_PATH"
