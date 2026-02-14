@@ -43,7 +43,7 @@ OVH_PASSWORD="$(conf_get OVH_PASSWORD "$WG_DDNS_CONF_PATH")"
 # ==============================
 
 get_public_ip() {
-    curl -s https://ifconfig.me/all.json | jq -r '.ip_addr'
+    curl -4 -s https://ifconfig.me/ip 2>/dev/null
 }
 
 update_dynhost() {
