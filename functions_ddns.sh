@@ -96,9 +96,12 @@ OVH_USERNAME=$OVH_USERNAME
 OVH_PASSWORD=$OVH_PASSWORD
 EOF
     info ""
+    info "Purging old configuration from $DDCLIENT_CONF_PATH ..."
+    remove_wireguard_ddns_block "$DDCLIENT_CONF_PATH"
     info "Writing configuration to $DDCLIENT_CONF_PATH ..."
     cat >> "$DDCLIENT_CONF_PATH" <<EOF
-# Host: $DDCLIENT_DYNDOMAIN
+
+# WireGuard DDNS configuration
 protocol=dyndns2
 server=$DDCLIENT_DYNSERVER
 login=$DDCLIENT_DYNUSER
@@ -106,7 +109,7 @@ password='$DDCLIENT_DYNPASS'
 ssl=yes
 use=web, web=ifconfig.me/ip
 $DDCLIENT_DYNDOMAIN
-# End of configuration for $DDCLIENT_DYNDOMAIN
+# End of configuration for WireGuard DDNS
 EOF
 
     #chmod 600 "$DDCLIENT_CONF_PATH"
@@ -370,4 +373,16 @@ detect_ddclient_conf() {
 
   # Fallback finale
   printf '%s\n' "/etc/ddclient/ddclient.conf"
+}
+
+remove_wireguard_ddns_block() {
+  CONF="$1"
+
+  if [ ! -f "$CONF" ]; then
+    echo "File non trovato: $CONF"
+    return 1
+  fi
+
+  sed '/^# WireGuard DDNS configuration$/,/^# End of configuration for WireGuard DDNS$/d' \
+    "$CONF" > "${CONF}.tmp" && mv "${CONF}.tmp" "$CONF"
 }
