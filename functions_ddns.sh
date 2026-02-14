@@ -102,7 +102,7 @@ EOF
 protocol=dyndns2
 server=$DDCLIENT_DYNSERVER
 login=$DDCLIENT_DYNUSER
-password='$DYNPASS'
+password='$DDCLIENT_DYNPASS'
 ssl=yes
 use=web, web=ifconfig.me/ip
 $DDCLIENT_DYNDOMAIN
