@@ -77,13 +77,13 @@ filter_configure() {
     CHAIN_PREV="$(conf_get CHAIN "$WG_FILTER_CONF_PATH")"
 
     # --- Questions to the user ---
-    ask WGPORT   "Enter the WireGuard UDP port (e.g., 51234)"                "${WGPORT_PREV:-}"          "$WGPORT_PREV"
-    ask WAN_IF   "Enter the WAN interface (e.g., eth0)"          "${WAN_IF_PREV:-}"           "$WAN_IF_PREV"
-    ask HOSTS    "Enter one or more space separated IP/hostnames (e.g., ddns.example.com)" "${HOSTS_PREV:-}" "$HOSTS_PREV"
-    ask EXTRA_URL "Enter URL of the extra IP/CIDR list (e.g., https://example.com/acl.txt)"              "${EXTRA_URL_PREV:-}" "$EXTRA_URL_PREV"
+    ask WGPORT   "Enter the WireGuard UDP port (e.g., 51234)"                ""          "$WGPORT_PREV"
+    ask WAN_IF   "Enter the WAN interface (e.g., eth0)"          ""           "$WAN_IF_PREV"
+    ask HOSTS    "Enter one or more space separated IP/hostnames (e.g., ddns.example.com)" "" "$HOSTS_PREV"
+    ask EXTRA_URL "Enter URL of the extra IP/CIDR list (e.g., https://example.com/acl.txt)"              "" "$EXTRA_URL_PREV"
     # For IPTABLES: default = which iptables (not from the file), but we show the previous as a note
-    ask IPTABLES "Path to iptables binary (e.g., /usr/sbin/iptables)"                       "${IPTABLES_DEFAULT:-}"              "$IPTABLES_PREV"
-    ask CHAIN    "Name of the dedicated chain for WireGuard (e.g., WG_FILTER)"      "${CHAIN_PREV:-}"       "$CHAIN_PREV"
+    ask IPTABLES "Path to iptables binary (e.g., /usr/sbin/iptables)"                       ""              "$IPTABLES_PREV"
+    ask CHAIN    "Name of the dedicated chain for WireGuard (e.g., WG_FILTER)"      ""       "$CHAIN_PREV"
 
     if [ "$EXTRA_URL" = "https://example.com/acl.txt" ]; then
     EXTRA_URL=""
