@@ -70,20 +70,20 @@ filter_configure() {
     IPTABLES_PREV="$(conf_get IPTABLES "$WG_FILTER_CONF_PATH")"
 
     # --- Prepare defaults/previous ---
-    WGPORT_PREV="$(conf_get WGPORT "$WG_FILTER_CONF_PATH")"
-    WAN_IF_PREV="$(conf_get WAN_IF "$WG_FILTER_CONF_PATH")"
-    HOSTS_PREV="$(conf_get HOSTS "$WG_FILTER_CONF_PATH")"
-    EXTRA_URL_PREV="$(conf_get EXTRA_URL "$WG_FILTER_CONF_PATH")"
-    CHAIN_PREV="$(conf_get CHAIN "$WG_FILTER_CONF_PATH")"
+    WGPORT_PREV=$(conf_get WGPORT "$WG_FILTER_CONF_PATH")
+    WAN_IF_PREV=$(conf_get WAN_IF "$WG_FILTER_CONF_PATH")
+    HOSTS_PREV=$(conf_get HOSTS "$WG_FILTER_CONF_PATH")
+    EXTRA_URL_PREV=$(conf_get EXTRA_URL "$WG_FILTER_CONF_PATH")
+    CHAIN_PREV=$(conf_get CHAIN "$WG_FILTER_CONF_PATH")
 
     # --- Questions to the user ---
-    ask WGPORT   "Enter the WireGuard UDP port (e.g., 51234)"                "${WGPORT_PREV:-51234}"          "$WGPORT_PREV"
-    ask WAN_IF   "Enter the WAN interface (e.g., eth0)"          "${WAN_IF_PREV:-}"           "$WAN_IF_PREV"
+    ask WGPORT   "Enter the WireGuard UDP port (e.g., 51234)"                "${WGPORT_PREV//\"/:-51234}"          "$WGPORT_PREV"
+    ask WAN_IF   "Enter the WAN interface (e.g., eth0)"          "${WAN_IF_PREV//\"/:-}"           "$WAN_IF_PREV"
     ask HOSTS    "Enter one or more space separated IP/hostnames (e.g., ddns.example.com)" "" "$HOSTS_PREV"
     ask EXTRA_URL "Enter URL of the extra IP/CIDR list (e.g., https://example.com/acl.txt)"              "" "$EXTRA_URL_PREV"
     # For IPTABLES: default = which iptables (not from the file), but we show the previous as a note
-    ask IPTABLES "Path to iptables binary (e.g., /usr/sbin/iptables)"                       "${IPTABLES_PREV:-/usr/sbin/iptables}"              "$IPTABLES_PREV"
-    ask CHAIN    "Name of the dedicated chain for WireGuard (e.g., WG_FILTER)"      "${CHAIN_PREV:-WG_FILTER}"       "$CHAIN_PREV"
+    ask IPTABLES "Path to iptables binary (e.g., /usr/sbin/iptables)"                       "${IPTABLES_PREV//\"/:-/usr/sbin/iptables}"              "$IPTABLES_PREV"
+    ask CHAIN    "Name of the dedicated chain for WireGuard (e.g., WG_FILTER)"      "${CHAIN_PREV//\"/:-WG_FILTER}"       "$CHAIN_PREV"
 
     if [ "$EXTRA_URL" = "https://example.com/acl.txt" ]; then
     EXTRA_URL=""
