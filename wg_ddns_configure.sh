@@ -64,6 +64,8 @@ fi
 
 while true; do
 
+  info ""
+
   info "DDClient status:"
   ddclient_is_running && printf "${C_GREEN} *${C_RESET} status: started\n" || printf "${C_GREEN} *${C_RESET} status: stopped\n"
 

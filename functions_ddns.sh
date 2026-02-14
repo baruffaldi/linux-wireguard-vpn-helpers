@@ -282,6 +282,7 @@ disable_ddclient() {
     return
   fi
 
+  info "ddclient è attualmente ATTIVO."
   info "Disabilitazione ed arresto del servizio..."
 
   if command -v rc-service >/dev/null 2>&1; then
