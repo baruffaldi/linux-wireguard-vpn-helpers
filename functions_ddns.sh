@@ -66,7 +66,8 @@ ddclient_configure() {
   if have_cmd ddclient; then
     # use=web, web=checkip.dyndns.com/, web-skip='IP Address'
     # ssl=yes
-    DDCLIENT_CONF_PATH="$(conf_get DDCLIENT_CONF_PATH "$WG_DDNS_CONF_PATH":-"/etc/ddclient/ddclient.conf")"
+    DEFAULT_DDCLIENT_CONF_PATH=$(detect_ddclient_conf)
+    DDCLIENT_CONF_PATH="$(conf_get DDCLIENT_CONF_PATH "$WG_DDNS_CONF_PATH")"
     DYNSERVER_PREV="$(conf_get DYNSERVER "$DDCLIENT_CONF_PATH")"
     DYNDOMAIN_PREV="$(conf_comment_get "Host" "$DDCLIENT_CONF_PATH")"
     DYNUSER_PREV="$(conf_get DYNUSER "$DDCLIENT_CONF_PATH")"
@@ -74,6 +75,7 @@ ddclient_configure() {
     OVH_HOSTNAME="$(conf_get OVH_HOSTNAME "$WG_DDNS_CONF_PATH")"
     OVH_USERNAME="$(conf_get OVH_USERNAME "$WG_DDNS_CONF_PATH")"
     OVH_PASSWORD="$(conf_get OVH_PASSWORD "$WG_DDNS_CONF_PATH")"
+    ask DDCLIENT_CONF_PATH "DDClient configuration file path" "${DDCLIENT_CONF_PATH:-$DEFAULT_DDCLIENT_CONF_PATH}" "$DDCLIENT_CONF_PATH"
     ask DDCLIENT_DYNSERVER "DynDNS provider (server)" "dynv6.com" "$DYNSERVER_PREV"
     ask DDCLIENT_DYNDOMAIN "DynDNS hostname (e.g. example.dynv6.com)" "" "$DYNDOMAIN_PREV"
     ask DDCLIENT_DYNUSER "DynDNS username" "none" "$DYNUSER_PREV"
@@ -349,4 +351,28 @@ disable_ovhclient() {
     else
         info "OVHClient è attualmente FERMO."
     fi
+}
+
+detect_ddclient_conf() {
+  # Se già definito e file esiste → usa quello
+  if [ -n "$DDCLIENT_CONF_PATH" ] && [ -f "$DDCLIENT_CONF_PATH" ]; then
+    printf '%s\n' "$DDCLIENT_CONF_PATH"
+    return 0
+  fi
+
+  # Path comuni
+  for path in \
+    /etc/ddclient.conf \
+    /etc/ddclient/ddclient.conf \
+    /usr/local/etc/ddclient.conf \
+    /etc/ddclient.conf.d/ddclient.conf
+  do
+    if [ -f "$path" ]; then
+      printf '%s\n' "$path"
+      return 0
+    fi
+  done
+
+  # Fallback finale
+  printf '%s\n' "/etc/ddclient/ddclient.conf"
 }
