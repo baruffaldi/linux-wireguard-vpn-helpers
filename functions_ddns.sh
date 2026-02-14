@@ -180,11 +180,11 @@ enable_disable_ddclient() {
 
 enable_ddclient() {
   if systemctl is-active --quiet "$SERVICE"; then
-    info "$SERVICE è attualmente ATTIVO."
+    info "ddclient è attualmente ATTIVO."
     return
   fi
 
-  info "$SERVICE è attualmente FERMO."
+  info "ddclient è attualmente FERMO."
   info "Abilitazione ed avvio del servizio..."
   if have_cmd rc-service; then
     # Alpine OpenRC
@@ -207,12 +207,12 @@ enable_ddclient() {
     nohup ddclient -daemon=300 >/dev/null 2>&1 &
   fi
 
-  success "$SERVICE avviato e abilitato."
+  success "ddclient avviato e abilitato."
 }
 
 disable_ddclient() {
   if ! systemctl is-active --quiet "$SERVICE"; then
-    info "$SERVICE è attualmente FERMO."
+    info "ddclient è attualmente FERMO."
     return
   fi
 
@@ -247,16 +247,16 @@ disable_ddclient() {
     success "ddclient process stopped (best-effort)."
   fi
 
-  success "$SERVICE fermato e disabilitato."
+  success "ddclient fermato e disabilitato."
 }
 
 enable_disable_ovhclient() {
     header "OVHClient Enable/Disable"
     
     if crontab -l 2>/dev/null | grep -q "${WG_DDNS_PATH}"; then
-        disable_ddclient
+        disable_ovhclient
     else
-        enable_ddclient
+        enable_ovhclient
     fi
 }
 
