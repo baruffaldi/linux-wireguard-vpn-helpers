@@ -164,9 +164,9 @@ ovhclient_configure() {
     OVH_USERNAME="$(conf_get OVH_USERNAME "$WG_DDNS_CONF_PATH")"
     OVH_PASSWORD="$(conf_get OVH_PASSWORD "$WG_DDNS_CONF_PATH")"
 
-    ask OVH_HOSTNAME "OVH hostname (e.g. this-server.example.com)" ""
-    ask OVH_USERNAME "OVH username (e.g. exampleuser)" ""
-    ask_secret OVH_PASSWORD "OVH password (e.g. examplepassword)" ""
+    ask OVH_HOSTNAME "OVH hostname (e.g. this-server.example.com)" "${OVH_HOSTNAME:-}"
+    ask OVH_USERNAME "OVH username (e.g. exampleuser)" "${OVH_USERNAME:-}"
+    ask_secret OVH_PASSWORD "OVH password (e.g. examplepassword)" "${OVH_PASSWORD:-}"
 
     # --- Write file ---
     info ""
