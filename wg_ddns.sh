@@ -1,11 +1,42 @@
-#!/bin/bash
+#!/bin/sh
+set -eu
 
-# ==============================
-# CONFIGURAZIONE HOSTNAMES
-# ==============================
+if [ -n "${1:-}" ]; then
+  AUTO_CHOICE="$1"
+else
+  AUTO_CHOICE=""
+fi
 
-declare -A HOSTNAMES
-HOSTNAMES["dc0.sbn.ovh"]="sbn.ovh-dc0:24234234523"
+resolve_realpath() {
+  f="$1"
+  while [ -L "$f" ]; do f="$(readlink "$f")"; done
+  cd "$(dirname "$f")" || exit 1
+  pwd -P
+}
+SCRIPT_PATH="$(resolve_realpath "$0")"
+
+# Source the common functions
+if [ -f "${SCRIPT_PATH}/common.sh" ]; then
+  . $SCRIPT_PATH/common.sh
+else
+  printf "\033[31m[ERROR]\033[0m Missing file: %s/common.sh\n" "$SCRIPT_PATH" >&2
+  exit 1
+fi
+if [ -f "${SCRIPT_PATH}/functions.sh" ]; then
+  . $SCRIPT_PATH/functions.sh
+else
+  printf "\033[31m[ERROR]\033[0m Missing file: %s/functions.sh\n" "$SCRIPT_PATH" >&2
+  exit 1
+fi
+
+WG_CONF_PATH=""
+WG_DDNS_CONF="wg_ddns.conf"
+WG_DDNS_CONF_PATH="${SCRIPT_PATH}/${WG_DDNS_CONF}"
+
+OVH_HOSTNAME="$(conf_get OVH_HOSTNAME "$WG_DDNS_CONF_PATH")"
+OVH_USERNAME="$(conf_get OVH_USERNAME "$WG_DDNS_CONF_PATH")"
+OVH_PASSWORD="$(conf_get OVH_PASSWORD "$WG_DDNS_CONF_PATH")"
+
 
 # ==============================
 # FUNZIONI
@@ -19,22 +50,16 @@ update_dynhost() {
     local ip="$1"
     local url="https://www.ovh.com/nic/update"
 
-    for fqdn in "${!HOSTNAMES[@]}"; do
-        credentials="${HOSTNAMES[$fqdn]}"
-        username="${credentials%%:*}"
-        password="${credentials##*:}"
+    response=$(curl -s -u "$OVH_USERNAME:$OVH_PASSWORD" \
+        "$url?system=dyndns&hostname=$OVH_HOSTNAME&myip=$ip")
 
-        response=$(curl -s -u "$username:$password" \
-            "$url?system=dyndns&hostname=$fqdn&myip=$ip")
+    echo "$response"
 
-        echo "$response"
-
-        if [[ "$response" == *"good"* || "$response" == *"nochg"* ]]; then
-            echo "✔ [$fqdn] IP aggiornato correttamente a $ip"
-        else
-            echo "⚠ [$fqdn] Errore: $response"
-        fi
-    done
+    if [[ "$response" == *"good"* || "$response" == *"nochg"* ]]; then
+        echo "[$OVH_HOSTNAME] IP aggiornato correttamente a $ip"
+    else
+        echo "[$OVH_HOSTNAME] Errore: $response"
+    fi
 }
 
 # ==============================
