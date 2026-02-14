@@ -66,7 +66,7 @@ ddclient_configure() {
   if have_cmd ddclient; then
     # use=web, web=checkip.dyndns.com/, web-skip='IP Address'
     # ssl=yes
-    DDCLIENT_CONF_PATH="$(conf_get DDCLIENT_CONF_PATH "$WG_DDNS_CONF_PATH")"
+    DDCLIENT_CONF_PATH="$(conf_get DDCLIENT_CONF_PATH "$WG_DDNS_CONF_PATH":-"/etc/ddclient/ddclient.conf")"
     DYNSERVER_PREV="$(conf_get DYNSERVER "$DDCLIENT_CONF_PATH")"
     DYNDOMAIN_PREV="$(conf_comment_get "Host" "$DDCLIENT_CONF_PATH")"
     DYNUSER_PREV="$(conf_get DYNUSER "$DDCLIENT_CONF_PATH")"
