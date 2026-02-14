@@ -98,14 +98,14 @@ EOF
     info ""
     info "Writing configuration to $DDCLIENT_CONF_PATH ..."
     cat >> "$DDCLIENT_CONF_PATH" <<EOF
-# Host: $DYNDOMAIN
+# Host: $DDCLIENT_DYNDOMAIN
 protocol=dyndns2
 server=$DYNSERVER
 login=$DYNUSER
 password='$DYNPASS'
 ssl=yes
 use=web, web=ifconfig.me/ip
-$DYNDOMAIN
+$DDCLIENT_DYNDOMAIN
 EOF
 
     #chmod 600 "$DDCLIENT_CONF_PATH"
