@@ -123,10 +123,10 @@ ask_secret() {
   IFS= read -r _ans || _ans=""
   stty echo 2>/dev/null || true
   printf "\n" >&2
-  val_esc=$(printf '%s' "$_ans" | sed 's/\\/\\\\/g; s/"/\\"/g')
   if [ -n "$_ans" ]; then
-      eval "$_var=\$val_esc"
+      eval "$_var=\$_ans"
   else
-      eval "$_var=\$_p"
+      val_esc=$(printf '%s' "$_p" | sed 's/\\/\\\\/g; s/"/\\"/g')
+      eval "$_var=\$val_esc"
   fi
 }
