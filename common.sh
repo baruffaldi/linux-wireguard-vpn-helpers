@@ -67,43 +67,47 @@ header() {
 # Stores the answer in the variable specified by the first argument.
 # Usage: ask VAR_NAME "Enter your name" "DefaultName"
 ask() {
-    var="$1"
-    prompt="$2"
-    def="${3-}"
-    prev_val="${4-}"
+  local __var="$1"
+  local prompt="$2"
+  local def="${3-}"
+  local prev_val="${4-}"
+  local ans
 
-    # strip quote esterne
-    def=$(printf '%s' "$def" | sed 's/^"//;s/"$//')
-    prev_val=$(printf '%s' "$prev_val" | sed 's/^"//;s/"$//')
+  # Sanitize: rimuovi solo eventuali virgolette esterne
+  def="${def%\"}"; def="${def#\"}"
+  prev_val="${prev_val%\"}"; prev_val="${prev_val#\"}"
 
-    if [ -n "$def" ]; then
-        if [ -n "$prev_val" ]; then
-            printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s [%s] (previous: %s): " "$prompt" "$def" "$prev_val"
-        else
-            printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s [%s]: " "$prompt" "$def"
-        fi
+  # Prompt
+  if [[ -n "$def" ]]; then
+    if [[ -n "$prev_val" ]]; then
+      printf "%b %b %s [%s] (previous: %s): " \
+        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt" "$def" "$prev_val"
     else
-        if [ -n "$prev_val" ]; then
-            printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s (previous: %s): " "$prompt" "$prev_val"
-        else
-        printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s: " "$prompt"
-        fi
+      printf "%b %b %s [%s]: " \
+        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt" "$def"
     fi
-
-    read ans || true
-
-    # ripulisci eventuali quote esterne dall'input
-    ans=$(printf '%s' "$ans" | sed 's/^"//;s/"$//')
-
-    if [ -n "$ans" ]; then
-        # escape per eval
-        ans_esc=$(printf '%s' "$ans" | sed 's/\\/\\\\/g; s/"/\\"/g')
-        eval "$var=\"$ans_esc\""
+  else
+    if [[ -n "$prev_val" ]]; then
+      printf "%b %b %s (previous: %s): " \
+        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt" "$prev_val"
     else
-        def_esc=$(printf '%s' "$def" | sed 's/\\/\\\\/g; s/"/\\"/g')
-        eval "$var=\"$def_esc\""
+      printf "%b %b %s: " \
+        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt"
     fi
+  fi
+
+  # Input
+  IFS= read -r ans || true
+  ans="${ans%\"}"; ans="${ans#\"}"   # se l'utente incolla "valore"
+
+  # Set variabile target (senza eval)
+  if [[ -n "$ans" ]]; then
+    printf -v "$__var" '%s' "$ans"
+  else
+    printf -v "$__var" '%s' "$def"
+  fi
 }
+
 
 # ask_secret "VARNAME" "Question"
 ask_secret() {

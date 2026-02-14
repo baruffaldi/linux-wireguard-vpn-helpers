@@ -51,7 +51,7 @@ fi
 
 info ""
 info "Configuration file: $WG_CONF_PATH"
-info "Client directory:      $CLIENTS_DIR"
+info "Client directory: $CLIENTS_DIR"
 
 # ----- SERVER READING -----
 need_root
