@@ -21,6 +21,8 @@ resolve_realpath() {
 }
 SCRIPT_PATH="$(resolve_realpath "$0")"
 
+chmod +x "$SCRIPT_PATH"/*.sh
+
 # Load your existing shared functions
 if [ -f "${SCRIPT_PATH}/common.sh" ]; then
   . $SCRIPT_PATH/common.sh
