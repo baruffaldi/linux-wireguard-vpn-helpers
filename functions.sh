@@ -137,7 +137,7 @@ remove_peer_by_name() {
 
 conf_get() {
   key="$1"
-  custom_path="$2"
+  custom_path="${2:-}"
   conf_path="${custom_path:-$WG_CONF_PATH}"
   if [ -f "$conf_path" ]; then
     # use grep + cut for better portability
