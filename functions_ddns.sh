@@ -77,7 +77,7 @@ ddclient_configure() {
     OVH_PASSWORD="$(conf_get OVH_PASSWORD "$WG_DDNS_CONF_PATH")"
     ask DDCLIENT_CONF_PATH "DDClient configuration file path" "${DDCLIENT_CONF_PATH:-$DEFAULT_DDCLIENT_CONF_PATH}" "$DDCLIENT_CONF_PATH"
     ask DDCLIENT_DYNSERVER "DynDNS provider server (e.g. dynv6.com)" "$DYNSERVER_PREV" "$DYNSERVER_PREV"
-    ask DDCLIENT_DYNDOMAIN "DynDNS hostname (e.g. example.dynv6.com)" "$DYNDOMAIN_PREV" "$DYNDOMAIN_PREV"
+    ask DDCLIENT_DYNDOMAIN "DynDNS hostname (e.g. example.dynv6.com)" "" "$DYNDOMAIN_PREV"
     ask DDCLIENT_DYNUSER "DynDNS username (e.g. none)" "$DYNUSER_PREV" "$DYNUSER_PREV"
     ask_secret DDCLIENT_DYNPASS "DynDNS password" "$DYNPASS_PREV"
 
@@ -100,8 +100,8 @@ EOF
     cat >> "$DDCLIENT_CONF_PATH" <<EOF
 # Host: $DDCLIENT_DYNDOMAIN
 protocol=dyndns2
-server=$DYNSERVER
-login=$DYNUSER
+server=$DDCLIENT_DYNSERVER
+login=$DDCLIENT_DYNUSER
 password='$DYNPASS'
 ssl=yes
 use=web, web=ifconfig.me/ip
