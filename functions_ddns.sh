@@ -29,7 +29,7 @@ view_ddns_config() {
     cat "$WG_DDNS_CONF_PATH"
     info "------------------------------------------------------------------------------"
     else
-    warning "Configuration file not found: $WG_CONF_PATH"
+    warning "Configuration file not found: $WG_DDNS_CONF_PATH"
     fi
     info ""
 }
