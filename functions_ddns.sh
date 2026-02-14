@@ -164,20 +164,20 @@ ovhclient_configure() {
     OVH_USERNAME="$(conf_get OVH_USERNAME "$WG_DDNS_CONF_PATH")"
     OVH_PASSWORD="$(conf_get OVH_PASSWORD "$WG_DDNS_CONF_PATH")"
 
-    ask OVH_HOSTNAME "OVH hostname (server)" "this-server.example.com"
-    ask OVH_USERNAME "OVH username" "exampleuser"
-    ask OVH_PASSWORD "OVH password" "examplepassword"
+    ask OVH_HOSTNAME "OVH hostname (e.g. this-server.example.com)" ""
+    ask OVH_USERNAME "OVH username (e.g. exampleuser)" ""
+    ask_secret OVH_PASSWORD "OVH password (e.g. examplepassword)" ""
 
     # --- Write file ---
     info ""
     info "Writing configuration to $WG_DDNS_CONF_PATH ..."
     cat > "$WG_DDNS_CONF_PATH" <<EOF
 # ================== WireGuard DDNS Config ==================
-DDCLIENT_CONF_PATH="$DDCLIENT_CONF_PATH"
-DDCLIENT_DYNDOMAIN="$DDCLIENT_DYNDOMAIN"
-DDCLIENT_DYNSERVER="$DDCLIENT_DYNSERVER"
-DDCLIENT_DYNUSER="$DDCLIENT_DYNUSER"
-DDCLIENT_DYNPASS="$DDCLIENT_DYNPASS"
+DDCLIENT_CONF_PATH=$DDCLIENT_CONF_PATH
+DDCLIENT_DYNDOMAIN=$DDCLIENT_DYNDOMAIN
+DDCLIENT_DYNSERVER=$DDCLIENT_DYNSERVER
+DDCLIENT_DYNUSER=$DDCLIENT_DYNUSER
+DDCLIENT_DYNPASS=$DDCLIENT_DYNPASS
 OVH_HOSTNAME="$OVH_HOSTNAME"
 OVH_USERNAME="$OVH_USERNAME"
 OVH_PASSWORD="$OVH_PASSWORD"
