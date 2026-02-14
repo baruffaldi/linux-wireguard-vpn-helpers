@@ -48,7 +48,7 @@ info "Configuration file: $WG_DDNS_CONF_PATH"
 
 # ----- SERVER READING -----
 need_root
-[ -f "$WG_DDNS_CONF_PATH" ] || die "Server file not found: $WG_DDNS_CONF_PATH"
+[ -f "$WG_DDNS_CONF_PATH" ] || warning "Server file not found: $WG_DDNS_CONF_PATH"
 
 # ------------------------------------------------------------------------------
 # STEP FUNCTIONS
