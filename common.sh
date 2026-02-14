@@ -67,39 +67,41 @@ header() {
 # Stores the answer in the variable specified by the first argument.
 # Usage: ask VAR_NAME "Enter your name" "DefaultName"
 ask() {
-    local __var="$1"
-    local prompt="$2"
-    local def="${3-}"
-    local prev_val="${4-}"
-    local ans
+    var="$1"
+    prompt="$2"
+    def="${3-}"
+    prev_val="${4-}"
 
     # strip quote esterne
-    def="${def%\"}"; def="${def#\"}"
-    prev_val="${prev_val%\"}"; prev_val="${prev_val#\"}"
+    def=$(printf '%s' "$def" | sed 's/^"//;s/"$//')
+    prev_val=$(printf '%s' "$prev_val" | sed 's/^"//;s/"$//')
 
     if [ -n "$def" ]; then
         if [ -n "$prev_val" ]; then
-            printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s [%s] (previous: %s): " "$prompt" "$def" "$prev_val"
+            printf "%s %s [%s] (previous: %s): " "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET} $prompt" "$def" "$prev_val"
         else
-            printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s [%s]: " "$prompt" "$def"
+            printf "%s %s [%s]: " "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET} $prompt" "$def"
         fi
     else
         if [ -n "$prev_val" ]; then
-            printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s (previous: %s): " "$prompt" "$prev_val"
+            printf "%s %s (previous: %s): " "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET} $prompt" "$prev_val"
         else
-            printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s: " "$prompt"
+            printf "%s %s: " "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET} $prompt"
         fi
     fi
 
-    read -r ans || true
+    read ans || true
 
-    # se vuoi ripulire anche input utente:
-    ans="${ans%\"}"; ans="${ans#\"}"
+    # ripulisci eventuali quote esterne dall'input
+    ans=$(printf '%s' "$ans" | sed 's/^"//;s/"$//')
 
     if [ -n "$ans" ]; then
-        printf -v "$__var" '%s' "$ans"
+        # escape per eval
+        ans_esc=$(printf '%s' "$ans" | sed 's/\\/\\\\/g; s/"/\\"/g')
+        eval "$var=\"$ans_esc\""
     else
-        printf -v "$__var" '%s' "$def"
+        def_esc=$(printf '%s' "$def" | sed 's/\\/\\\\/g; s/"/\\"/g')
+        eval "$var=\"$def_esc\""
     fi
 }
 
