@@ -68,10 +68,10 @@ ddclient_configure() {
     # ssl=yes
     DEFAULT_DDCLIENT_CONF_PATH=$(detect_ddclient_conf)
     DDCLIENT_CONF_PATH="$(conf_get DDCLIENT_CONF_PATH "$WG_DDNS_CONF_PATH")"
-    DYNSERVER_PREV="$(conf_get DYNSERVER "$WG_DDNS_CONF_PATH")"
-    DYNDOMAIN_PREV="$(conf_comment_get "Host" "$WG_DDNS_CONF_PATH")"
-    DYNUSER_PREV="$(conf_get DYNUSER "$WG_DDNS_CONF_PATH")"
-    DYNPASS_PREV="$(conf_get DYNPASS "$WG_DDNS_CONF_PATH")" 
+    DYNSERVER_PREV="$(conf_get DDCLIENT_DYNSERVER "$WG_DDNS_CONF_PATH")"
+    DYNDOMAIN_PREV="$(conf_get DDCLIENT_DYNDOMAIN "$WG_DDNS_CONF_PATH")"
+    DYNUSER_PREV="$(conf_get DDCLIENT_DYNUSER "$WG_DDNS_CONF_PATH")"
+    DYNPASS_PREV="$(conf_get DDCLIENT_DYNPASS "$WG_DDNS_CONF_PATH")" 
     OVH_HOSTNAME="$(conf_get OVH_HOSTNAME "$WG_DDNS_CONF_PATH")"
     OVH_USERNAME="$(conf_get OVH_USERNAME "$WG_DDNS_CONF_PATH")"
     OVH_PASSWORD="$(conf_get OVH_PASSWORD "$WG_DDNS_CONF_PATH")"
@@ -106,6 +106,7 @@ password='$DYNPASS'
 ssl=yes
 use=web, web=ifconfig.me/ip
 $DDCLIENT_DYNDOMAIN
+# End of configuration for $DDCLIENT_DYNDOMAIN
 EOF
 
     #chmod 600 "$DDCLIENT_CONF_PATH"
