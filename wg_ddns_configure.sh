@@ -70,9 +70,9 @@ while true; do
 
   info "OVHClient status:"
   if crontab -l 2>/dev/null | grep -q "${WG_DDNS_PATH}"; then
-      info "${C_GREEN} *${C_RESET} status: started"
+      printf "${C_GREEN} *${C_RESET} status: started"
   else
-      info "${C_GREEN} *${C_RESET} status: stopped"
+      printf "${C_GREEN} *${C_RESET} status: stopped"
   fi
 
   if [ ! -n "$AUTO_CHOICE" ]; then
