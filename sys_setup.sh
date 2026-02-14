@@ -87,11 +87,11 @@ while true; do
     info ""
     info "===================== MENU ====================="
     info " [0] Update system and helpers"
-    info " [1] Change root password"
-    info " [2] Show network interfaces and routes"
-    info " [3] Run setup-networking"
-    info " [4] Configure Dynamic DNS (ddclient)"
-    info " [5] Install VPN prerequisites"
+    info " [1] Install VPN prerequisites"
+    info " [2] Change root password"
+    info " [3] Show network interfaces and routes"
+    info " [4] Run setup-networking"
+    info " [5] Configure Dynamic DNS"
     info " [6] Configure VPN server"
     info " [7] Configure VPN client"
     info " [8] Configure VPN filter"
@@ -109,11 +109,11 @@ while true; do
   fi
   case "$choice" in
     0) update_system ;;
-    1) change_root_password ;;
-    2) show_network_info ;;
-    3) setup_networking ;;
-    4) ddclient_configure ;;
-    5) install_vpn_prereq ;;
+    1) install_vpn_prereq ;;
+    2) change_root_password ;;
+    3) show_network_info ;;
+    4) setup_networking ;;
+    5) ddns_configure ;;
     6) server_configure ;;
     7) client_configure ;;
     8) filter_configure ;;

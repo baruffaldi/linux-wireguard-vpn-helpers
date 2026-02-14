@@ -70,9 +70,14 @@ ask() {
     var="$1"
     prompt="$2"
     def="${3:-}"
+    prev_val="${4:-}"
 
     if [ -n "$def" ]; then
-        printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s [%s]: " "$prompt" "$def"
+        if [ -n "$prev_val" ]; then
+            printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s [%s] (previous: %s): " "$prompt" "$def" "$prev_val"
+        else
+            printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s [%s]: " "$prompt" "$def"
+        fi
     else
         printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s: " "$prompt"
     fi
@@ -87,11 +92,15 @@ ask() {
 
 # ask_secret "VARNAME" "Question"
 ask_secret() {
-  _var="$1"; _q="$2"
+  _var="$1"; _q="$2"; _p="${3:-}"
   printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s: " "$_q" >&2
   stty -echo 2>/dev/null || true
   IFS= read -r _ans || _ans=""
   stty echo 2>/dev/null || true
   printf "\n" >&2
-  eval "$_var=\$_ans"
+  if [ -n "$_ans" ]; then
+      eval "$_var=\$_ans"
+  else
+      eval "$_var=\$_p"
+  fi
 }

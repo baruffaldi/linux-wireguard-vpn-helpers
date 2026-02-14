@@ -237,8 +237,8 @@ EOF
     fi
 
     # --- Start the interface ---
-    info "Starting the interface..."
     success "Everything is ok!"
+    info "Restarting the interface..."
     info ""
     reload_and_start_wg_interface "$INTERFACE"
 }

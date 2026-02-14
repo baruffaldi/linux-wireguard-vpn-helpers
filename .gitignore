@@ -1,5 +1,6 @@
 .gitupdate.sh
 .gitfetch.sh
+wg_ddns.conf
 wg_filter.conf
 reports
 reports/*

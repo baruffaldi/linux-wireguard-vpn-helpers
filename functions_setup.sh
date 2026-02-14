@@ -112,87 +112,6 @@ setup_networking() {
   warning "Unable to detect a known network manager. Please reconfigure manually."
 }
 
-ddclient_configure() {
-  header "[4] Configure Dynamic DNS (ddclient)"
-
-  # --- Detect package manager (global fallback if PKG unset) ---
-  if [ -z "${PKG:-}" ]; then
-    if have_cmd apk; then PKG="apk"
-    elif have_cmd apt-get; then PKG="apt-get"
-    elif have_cmd dnf; then PKG="dnf"
-    elif have_cmd yum; then PKG="yum"
-    elif have_cmd zypper; then PKG="zypper"
-    elif have_cmd pacman; then PKG="pacman"
-    else PKG=""
-    fi
-  fi
-
-  # --- Install ddclient if missing ---
-  if ! have_cmd ddclient; then
-    info "Installing ddclient..."
-    case "$PKG" in
-      apk) apk add --no-cache ddclient ;;
-      apt-get) apt-get update -qq && apt-get install -y ddclient ;;
-      dnf|yum) "$PKG" install -y ddclient ;;
-      zypper) zypper -n install ddclient ;;
-      pacman) pacman -Sy --noconfirm ddclient ;;
-      *) warning "No supported package manager detected. Install ddclient manually."; return 1 ;;
-    esac
-  fi
-
-  # --- Configure ddclient ---
-  if have_cmd ddclient; then
-    # use=web, web=checkip.dyndns.com/, web-skip='IP Address'
-    # ssl=yes
-    ask DYNSERVER "DynDNS provider (server)" "dynv6.com"
-    ask DYNDOMAIN "DynDNS hostname (e.g. example.dynv6.com)" ""
-    ask DYNUSER "DynDNS username" "none"
-    ask_secret DYNPASS "DynDNS password"
-
-    cat >> /etc/ddclient/ddclient.conf <<EOF
-protocol=dyndns2
-server=$DYNSERVER
-login=$DYNUSER
-password='$DYNPASS'
-ssl=yes
-use=web, web=ifconfig.me/ip
-$DYNDOMAIN
-EOF
-
-    #chmod 600 /etc/ddclient/ddclient.conf
-    success "ddclient configuration written to /etc/ddclient/ddclient.conf"
-  else
-    warning "ddclient not installed. Skipping configuration."
-    return 1
-  fi
-
-  # --- Ensure ddclient runs and starts at boot ---
-  info "Ensuring ddclient service is enabled and running..."
-
-  if have_cmd rc-service; then
-    # Alpine OpenRC
-    rc-update add ddclient default >/dev/null 2>&1 || true
-    rc-service ddclient restart >/dev/null 2>&1 && success "ddclient restarted (OpenRC)."
-  elif have_cmd systemctl; then
-    # systemd-based systems
-    systemctl enable ddclient >/dev/null 2>&1 || true
-    if systemctl is-active --quiet ddclient; then
-      systemctl restart ddclient && success "ddclient restarted (systemd)."
-    else
-      systemctl start ddclient && success "ddclient started (systemd)."
-    fi
-  elif have_cmd service; then
-    # sysvinit fallback
-    service ddclient restart >/dev/null 2>&1 || service ddclient start >/dev/null 2>&1
-    success "ddclient started (SysVinit)."
-  else
-    warning "No service manager detected. Running ddclient in background..."
-    nohup ddclient -daemon=300 >/dev/null 2>&1 &
-  fi
-
-  success "Dynamic DNS setup complete."
-}
-
 install_vpn_prereq() {
   header "[5] Run VPN installer"
   INSTALLER=""
@@ -204,6 +123,15 @@ install_vpn_prereq() {
     sh "$INSTALLER"
   else
     warning "Installer script not found."
+  fi
+}
+
+ddns_configure() {
+  header "[6] Configure Dynamic DNS"
+  if [ -x "$WG_HELPERS_DIR/wg_ddns_configure.sh" ]; then
+    sh "$WG_HELPERS_DIR/wg_ddns_configure.sh"
+  else
+    warning "DDNS configurator not found."
   fi
 }
 
