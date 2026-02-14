@@ -223,112 +223,50 @@ ddclient_is_running() {
 }
 
 enable_disable_ddclient() {
-    header "DDClient Enable/Disable"
+  header "DDClient Enable/Disable"
+  SERVICE="ddclient"
 
-    SERVICE="ddclient"
-
-    # --- Verifica che il servizio esista su almeno un manager ---
-    if have_cmd rc-service; then
-        if ! rc-service "$SERVICE" status >/dev/null 2>&1; then
-            warning "Servizio $SERVICE non trovato (OpenRC)."
-            return 1
-        fi
-
-        if rc-service "$SERVICE" status >/dev/null 2>&1; then
-            disable_ddclient
-        else
-            enable_ddclient
-        fi
-
-    elif have_cmd systemctl; then
-        if ! systemctl list-unit-files 2>/dev/null | grep -q "^${SERVICE}\.service"; then
-            warning "Servizio $SERVICE non trovato (systemd)."
-            return 1
-        fi
-
-        if systemctl is-active --quiet "$SERVICE"; then
-            disable_ddclient
-        else
-            enable_ddclient
-        fi
-
-    elif have_cmd service; then
-        # SysV fallback
-        if service "$SERVICE" status >/dev/null 2>&1; then
-            disable_ddclient
-        else
-            enable_ddclient
-        fi
-
-    else
-        # Nessun service manager → controlla processo
-        if have_cmd pgrep && pgrep -f '[d]dclient' >/dev/null 2>&1; then
-            disable_ddclient
-        else
-            enable_ddclient
-        fi
-    fi
+  if ddclient_is_running; then
+    disable_ddclient
+  else
+    enable_ddclient
+  fi
 }
 
 enable_ddclient() {
-  # --- Stato attuale (manager-aware) ---
-  if have_cmd rc-service; then
-    # OpenRC: 0 = started
-    if rc-service ddclient status >/dev/null 2>&1; then
-      info "ddclient è attualmente ATTIVO."
-      return
-    else
-      info "ddclient è attualmente FERMO."
-    fi
+  SERVICE="${SERVICE:-ddclient}"
 
-  elif have_cmd systemctl; then
-    # systemd
-    if systemctl is-active --quiet ddclient; then
-      info "ddclient è attualmente ATTIVO."
-      return
-    else
-      info "ddclient è attualmente FERMO."
-    fi
-
-  elif have_cmd service; then
-    # SysV: molte distro usano exit code 0 se running
-    if service ddclient status >/dev/null 2>&1; then
-      info "ddclient è attualmente ATTIVO."
-      return
-    else
-      info "ddclient è attualmente FERMO."
-    fi
-
-  else
-    # Fallback: processo in esecuzione
-    if have_cmd pgrep && pgrep -f '[d]dclient' >/dev/null 2>&1; then
-      info "ddclient è attualmente ATTIVO."
-      return
-    else
-      info "ddclient è attualmente FERMO."
-    fi
+  if ddclient_is_running; then
+    info "ddclient è attualmente ATTIVO."
+    return
   fi
 
+  info "ddclient è attualmente FERMO."
   info "Abilitazione ed avvio del servizio..."
 
-  # --- Avvio/enable (come già avevi) ---
-  if have_cmd rc-service; then
-    rc-update add ddclient default >/dev/null 2>&1 || true
-    rc-service ddclient restart >/dev/null 2>&1 && success "ddclient restarted (OpenRC)."
+  if command -v rc-service >/dev/null 2>&1; then
+    # OpenRC
+    rc-update add "$SERVICE" default >/dev/null 2>&1 || true
+    rc-service "$SERVICE" restart >/dev/null 2>&1 || rc-service "$SERVICE" start >/dev/null 2>&1 || true
+    success "ddclient started/restarted (OpenRC)."
 
-  elif have_cmd systemctl; then
-    systemctl enable ddclient >/dev/null 2>&1 || true
-    if systemctl is-active --quiet ddclient; then
-      systemctl restart ddclient && success "ddclient restarted (systemd)."
+  elif command -v systemctl >/dev/null 2>&1; then
+    # systemd
+    systemctl enable "$SERVICE" >/dev/null 2>&1 || true
+    systemctl start "$SERVICE"  >/dev/null 2>&1 || true
+    if ddclient_is_running; then
+      success "ddclient started (systemd)."
     else
-      systemctl start ddclient && success "ddclient started (systemd)."
+      warning "ddclient non risulta attivo dopo l'avvio (systemd)."
     fi
 
-  elif have_cmd service; then
-    service ddclient restart >/dev/null 2>&1 || service ddclient start >/dev/null 2>&1
+  elif command -v service >/dev/null 2>&1; then
+    # SysVinit
+    service "$SERVICE" restart >/dev/null 2>&1 || service "$SERVICE" start >/dev/null 2>&1 || true
     success "ddclient started (SysVinit)."
 
   else
+    # No service manager detected
     warning "No service manager detected. Running ddclient in background..."
     nohup ddclient -daemon=300 >/dev/null 2>&1 &
   fi
@@ -339,49 +277,31 @@ enable_ddclient() {
 disable_ddclient() {
   SERVICE="${SERVICE:-ddclient}"
 
-  # --- Controllo stato iniziale (manager-aware) ---
-  if have_cmd rc-service; then
-    if ! rc-service "$SERVICE" status >/dev/null 2>&1; then
-      info "ddclient è attualmente FERMO."
-      return
-    fi
-  elif have_cmd systemctl; then
-    if ! systemctl is-active --quiet "$SERVICE"; then
-      info "ddclient è attualmente FERMO."
-      return
-    fi
-  elif have_cmd service; then
-    if ! service "$SERVICE" status >/dev/null 2>&1; then
-      info "ddclient è attualmente FERMO."
-      return
-    fi
-  else
-    if have_cmd pgrep && ! pgrep -f '[d]dclient' >/dev/null 2>&1; then
-      info "ddclient è attualmente FERMO."
-      return
-    fi
+  if ! ddclient_is_running; then
+    info "ddclient è attualmente FERMO."
+    return
   fi
 
   info "Disabilitazione ed arresto del servizio..."
 
-  if have_cmd rc-service; then
-    # Alpine OpenRC
+  if command -v rc-service >/dev/null 2>&1; then
+    # OpenRC
     rc-service "$SERVICE" stop >/dev/null 2>&1 || true
     rc-update del "$SERVICE" default >/dev/null 2>&1 || true
     success "ddclient stopped/disabled (OpenRC)."
 
-  elif have_cmd systemctl; then
-    # systemd-based systems
+  elif command -v systemctl >/dev/null 2>&1; then
+    # systemd
     systemctl stop "$SERVICE" >/dev/null 2>&1 || true
     systemctl disable "$SERVICE" >/dev/null 2>&1 || true
     success "ddclient stopped/disabled (systemd)."
 
-  elif have_cmd service; then
-    # sysvinit fallback
+  elif command -v service >/dev/null 2>&1; then
+    # SysVinit
     service "$SERVICE" stop >/dev/null 2>&1 || true
-    if have_cmd update-rc.d; then
+    if command -v update-rc.d >/dev/null 2>&1; then
       update-rc.d "$SERVICE" disable >/dev/null 2>&1 || true
-    elif have_cmd chkconfig; then
+    elif command -v chkconfig >/dev/null 2>&1; then
       chkconfig "$SERVICE" off >/dev/null 2>&1 || true
     fi
     success "ddclient stopped/disabled (SysVinit)."
