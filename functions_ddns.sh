@@ -155,8 +155,8 @@ EOF
   fi
 
   # --- Ensure ovhclient runs and starts at boot ---
-  info "Ensuring ovhclient service is enabled and running..."
-  enable_ovhclient
+  #info "Ensuring ovhclient service is enabled and running..."
+  # enable_ovhclient
 
   success "OVHClient setup complete."
 }
