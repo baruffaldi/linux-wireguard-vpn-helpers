@@ -118,6 +118,7 @@ ask() {
 # ask_secret "VARNAME" "Question"
 ask_secret() {
   _var="$1"; _q="$2"; _p="${3:-}"
+  _p=$(printf '%s' "$_p" | sed 's/^"//;s/"$//')
   printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s: " "$_q" >&2
   stty -echo 2>/dev/null || true
   IFS= read -r _ans || _ans=""
@@ -126,7 +127,6 @@ ask_secret() {
   if [ -n "$_ans" ]; then
       eval "$_var=\$_ans"
   else
-      val_esc=$(printf '%s' "$_p" | sed 's/\\/\\\\/g; s/"/\\"/g')
-      eval "$_var=\$val_esc"
+      eval "$_var=\$_p"
   fi
 }
