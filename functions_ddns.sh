@@ -117,8 +117,8 @@ EOF
   fi
 
   # --- Ensure ddclient runs and starts at boot ---
-  info "Ensuring ddclient service is enabled and running..."
-  enable_ddclient
+  #info "Ensuring ddclient service is enabled and running..."
+  #enable_ddclient
 
   success "DDClient setup complete."
 }
