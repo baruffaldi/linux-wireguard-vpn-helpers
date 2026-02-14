@@ -1,5 +1,10 @@
-# ================== OVH Config ==================
+# ================== WireGuard DDNS Config ==================
 
+DDCLIENT_CONF_PATH="/etc/ddclient/ddclient.conf" # Percorso del file di configurazione ddclient
+DDCLIENT_DYNDOMAIN="example.v6.rocks"
+DDCLIENT_DYNSERVER="dynv6.com"
+DDCLIENT_DYNUSER="none"
+DDCLIENT_DYNPASS="public-auth-key"
 OVH_HOSTNAME="this-server.example.com"  # Hostname OVH per il controllo IP
 OVH_USERNAME="exampleuser"              # Username OVH
 OVH_PASSWORD="examplepassword"          # Password OVH
