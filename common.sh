@@ -79,19 +79,19 @@ ask() {
   # stampa prompt
   if [ -n "$def" ]; then
     if [ -n "$prev_val" ]; then
-      printf "%s %s %s [%s] (previous: %s): " \
-        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt" "$def" "$prev_val"
+      printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s [%s] (previous: %s): " \
+        "$prompt" "$def" "$prev_val"
     else
-      printf "%s %s %s [%s]: " \
-        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt" "$def"
+      printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s [%s]: " \
+        "$prompt" "$def"
     fi
   else
     if [ -n "$prev_val" ]; then
-      printf "%s %s %s (previous: %s): " \
-        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt" "$prev_val"
+      printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s (previous: %s): " \
+        "$prompt" "$prev_val"
     else
-      printf "%s %s %s: " \
-        "${C_CYAN}[?]${C_RESET}" "${C_YELLOW}>>${C_RESET}" "$prompt"
+      printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s: " \
+        "$prompt"
     fi
   fi
 
