@@ -45,7 +45,6 @@ CRON_LINE="*/5    *   *   *   *   ${WG_DDNS_PATH} >/dev/null 2>&1"
 
 info ""
 info "Configuration file: $WG_DDNS_CONF_PATH"
-info ""
 
 # ----- SERVER READING -----
 need_root
