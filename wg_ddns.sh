@@ -37,6 +37,9 @@ OVH_HOSTNAME="$(conf_get OVH_HOSTNAME "$WG_DDNS_CONF_PATH")"
 OVH_USERNAME="$(conf_get OVH_USERNAME "$WG_DDNS_CONF_PATH")"
 OVH_PASSWORD="$(conf_get OVH_PASSWORD "$WG_DDNS_CONF_PATH")"
 
+OVH_HOSTNAME=$(printf '%s' "$OVH_HOSTNAME" | sed 's/^"//;s/"$//')
+OVH_USERNAME=$(printf '%s' "$OVH_USERNAME" | sed 's/^"//;s/"$//')
+OVH_PASSWORD=$(printf '%s' "$OVH_PASSWORD" | sed 's/^"//;s/"$//')
 
 # ==============================
 # FUNZIONI
