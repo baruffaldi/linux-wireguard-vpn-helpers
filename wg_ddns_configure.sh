@@ -48,7 +48,6 @@ info "Configuration file: $WG_DDNS_CONF_PATH"
 
 # ----- SERVER READING -----
 need_root
-ensure_dirs
 [ -f "$WG_DDNS_CONF_PATH" ] || die "Server file not found: $WG_DDNS_CONF_PATH"
 
 

@@ -47,7 +47,6 @@ info "Configuration file: $WG_FILTER_CONF_PATH"
 
 # ----- SERVER READING -----
 need_root
-ensure_dirs
 [ -f "$WG_FILTER_CONF_PATH" ] || die "Server file not found: $WG_FILTER_CONF_PATH"
 
 
