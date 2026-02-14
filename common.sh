@@ -67,10 +67,15 @@ header() {
 # Stores the answer in the variable specified by the first argument.
 # Usage: ask VAR_NAME "Enter your name" "DefaultName"
 ask() {
-    var="$1"
-    prompt="$2"
-    def="${3:-}"
-    prev_val="${4:-}"
+    local var="$1"
+    local prompt="$2"
+    local def="${3-}"
+    local prev_val="${4-}"
+    local ans
+
+    # strip quote esterne (") se presenti
+    def="${def%\"}"; def="${def#\"}"
+    prev_val="${prev_val%\"}"; prev_val="${prev_val#\"}"
 
     if [ -n "$def" ]; then
         if [ -n "$prev_val" ]; then
@@ -82,17 +87,19 @@ ask() {
         if [ -n "$prev_val" ]; then
             printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s (previous: %s): " "$prompt" "$prev_val"
         else
-        printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s: " "$prompt"
+            printf "${C_CYAN}[?]${C_RESET} ${C_YELLOW}>>${C_RESET} %s: " "$prompt"
         fi
     fi
 
-    read ans || true
+    read -r ans || true
+
     if [ -n "${ans:-}" ]; then
-        eval "$var=\$ans"
+        printf -v "$var" '%s' "$ans"
     else
-        eval "$var=\$def"
+        printf -v "$var" '%s' "$def"
     fi
 }
+
 
 # ask_secret "VARNAME" "Question"
 ask_secret() {
