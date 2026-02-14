@@ -1,0 +1,5 @@
+# ================== OVH Config ==================
+
+OVH_HOSTNAME="this-server.example.com"  # Hostname OVH per il controllo IP
+OVH_USERNAME="exampleuser"              # Username OVH
+OVH_PASSWORD="examplepassword"          # Password OVH
