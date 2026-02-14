@@ -65,9 +65,9 @@ while true; do
 
   info "Firewall status:"
   if crontab -l 2>/dev/null | grep -q "wg_filter.sh"; then
-      info "\e[32m *\e[0m status: started"
+      printf "${C_GREEN} *${C_RESET} status: started\n"
   else
-      info "\e[32m *\e[0m status: stopped"
+      printf "${C_GREEN} *${C_RESET} status: stopped\n"
   fi
 
   if [ ! -n "$AUTO_CHOICE" ]; then
@@ -86,9 +86,9 @@ while true; do
     ask choice "Select an option" ""
   fi
   case "$choice" in
-    1) view_firewall_config ;;
-    2) firewall_configure ;;
-    3) enable_disable_firewall ;;
+    1) view_filter_config ;;
+    2) filter_configure ;;
+    3) enable_disable_filter ;;
     q|Q) success "Exiting."; break ;;
     *) warning "Invalid choice." ;;
   esac

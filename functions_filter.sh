@@ -24,7 +24,10 @@ view_filter_config() {
     header "WireGuard Filter Configuration File"
     info ""
     if [ -f "$WG_FILTER_CONF_PATH" ]; then
+    info "Current configuration file content:"
+    info "------------------------------------------------------------------------------"
     cat "$WG_FILTER_CONF_PATH"
+    info "------------------------------------------------------------------------------"
     else
     warning "Configuration file not found: $WG_FILTER_CONF_PATH"
     fi
@@ -145,7 +148,7 @@ EOF
 }
 
 
-enable_disable_firewall() {
+enable_disable_filter() {
     header "Firewall Enable/Disable"
 
     # Controlla se è presente nel crontab

@@ -8,10 +8,14 @@ view_server_config() {
     header "WireGuard Server Configuration File"
     info ""
     if [ -f "$WG_CONF_PATH" ]; then
+    info "Current configuration file content:"
+    info "------------------------------------------------------------------------------"
     cat "$WG_CONF_PATH"
+    info "------------------------------------------------------------------------------"
     else
     warning "Configuration file not found: $WG_CONF_PATH"
     fi
+    info ""
 }
 
 server_configure() {

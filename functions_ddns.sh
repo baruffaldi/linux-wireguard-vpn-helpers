@@ -24,10 +24,14 @@ view_ddns_config() {
     header "WireGuard DDNS Configuration File"
     info ""
     if [ -f "$WG_DDNS_CONF_PATH" ]; then
+    info "Current configuration file content:"
+    info "------------------------------------------------------------------------------"
     cat "$WG_DDNS_CONF_PATH"
+    info "------------------------------------------------------------------------------"
     else
     warning "Configuration file not found: $WG_CONF_PATH"
     fi
+    info ""
 }
 
 ddclient_configure() {
@@ -64,7 +68,7 @@ ddclient_configure() {
     # ssl=yes
     DDCLIENT_CONF_PATH="$(conf_get DDCLIENT_CONF_PATH "$WG_DDNS_CONF_PATH")"
     DYNSERVER_PREV="$(conf_get DYNSERVER "$DDCLIENT_CONF_PATH")"
-    DYNDOMAIN_PREV="$(conf_get DYNDOMAIN "$DDCLIENT_CONF_PATH")"
+    DYNDOMAIN_PREV="$(conf_comment_get "Host" "$DDCLIENT_CONF_PATH")"
     DYNUSER_PREV="$(conf_get DYNUSER "$DDCLIENT_CONF_PATH")"
     DYNPASS_PREV="$(conf_get DYNPASS "$DDCLIENT_CONF_PATH")" 
     ask DYNSERVER "DynDNS provider (server)" "dynv6.com" "$DYNSERVER_PREV"
@@ -76,6 +80,7 @@ ddclient_configure() {
     info ""
     info "Writing configuration to $DDCLIENT_CONF_PATH ..."
     cat >> "$DDCLIENT_CONF_PATH" <<EOF
+# Host: $DYNDOMAIN
 protocol=dyndns2
 server=$DYNSERVER
 login=$DYNUSER
