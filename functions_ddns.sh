@@ -74,10 +74,10 @@ ddclient_configure() {
     OVH_HOSTNAME="$(conf_get OVH_HOSTNAME "$WG_DDNS_CONF_PATH")"
     OVH_USERNAME="$(conf_get OVH_USERNAME "$WG_DDNS_CONF_PATH")"
     OVH_PASSWORD="$(conf_get OVH_PASSWORD "$WG_DDNS_CONF_PATH")"
-    ask DYNSERVER "DynDNS provider (server)" "dynv6.com" "$DYNSERVER_PREV"
-    ask DYNDOMAIN "DynDNS hostname (e.g. example.dynv6.com)" "" "$DYNDOMAIN_PREV"
-    ask DYNUSER "DynDNS username" "none" "$DYNUSER_PREV"
-    ask_secret DYNPASS "DynDNS password" "$DYNPASS_PREV"
+    ask DDCLIENT_DYNSERVER "DynDNS provider (server)" "dynv6.com" "$DYNSERVER_PREV"
+    ask DDCLIENT_DYNDOMAIN "DynDNS hostname (e.g. example.dynv6.com)" "" "$DYNDOMAIN_PREV"
+    ask DDCLIENT_DYNUSER "DynDNS username" "none" "$DYNUSER_PREV"
+    ask_secret DDCLIENT_DYNPASS "DynDNS password" "$DYNPASS_PREV"
 
     # --- Write file ---
     info ""
